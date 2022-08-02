@@ -216,7 +216,7 @@ func StartCollectionRun(ctx context.Context, body []byte) (*State, *attack_kit_a
 	cmd := exec.Command(state.Command[0], state.Command[1:]...)
 	cmdOut, cmdErr := cmd.CombinedOutput()
 	if cmdErr != nil {
-		return nil, attack_kit_api.Ptr(utils.ToError(fmt.Sprintf("Failed to execute postman action"), err))
+		return nil, attack_kit_api.Ptr(utils.ToError(fmt.Sprintf("Failed to execute postman action"), cmdErr))
 	}
 
 	cmdOutStr := string(cmdOut)
