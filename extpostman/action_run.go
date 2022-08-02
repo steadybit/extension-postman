@@ -4,6 +4,7 @@
 package extpostman
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/steadybit/attack-kit/go/attack_kit_api"
@@ -14,7 +15,7 @@ import (
 func RegisterHandlers() {
 	utils.RegisterHttpHandler("/postman/collection/run", utils.GetterAsHandler(getActionDescription))
 	utils.RegisterHttpHandler("/postman/collection/run/prepare", prepareCollectionRun)
-	//utils.RegisterHttpHandler("/postman/collection/run/start", startCollectionRun)
+	utils.RegisterHttpHandler("/postman/collection/run/start", startCollectionRun)
 }
 
 func getActionDescription() attack_kit_api.AttackDescription {
@@ -183,6 +184,31 @@ func PrepareCollectionRun(body []byte) (*State, *attack_kit_api.AttackKitError) 
 	if request.Config["iterations"] != nil && request.Config["iterations"].(float64) > 1 {
 		state.Command = append(state.Command, fmt.Sprintf("-n"))
 		state.Command = append(state.Command, fmt.Sprintf("%.0f", request.Config["iterations"].(float64)))
+	}
+
+	return &state, nil
+}
+
+func startCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
+	state, err := StartCollectionRun(r.Context(), body)
+	if err != nil {
+		utils.WriteError(w, *err)
+	} else {
+		utils.WriteAttackState(w, *state)
+	}
+}
+
+func StartCollectionRun(ctx context.Context, body []byte) (*State, *attack_kit_api.AttackKitError) {
+	var request attack_kit_api.StartAttackRequestBody
+	err := json.Unmarshal(body, &request)
+	if err != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError("Failed to parse request body", err))
+	}
+
+	var state State
+	err = utils.DecodeAttackState(request.State, &state)
+	if err != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError("Failed to parse attack state", err))
 	}
 
 	return &state, nil
