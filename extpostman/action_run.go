@@ -5,6 +5,7 @@ package extpostman
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/steadybit/attack-kit/go/attack_kit_api"
 	"github.com/steadybit/extension-postman/utils"
 	"net/http"
@@ -119,6 +120,7 @@ func getActionDescription() attack_kit_api.AttackDescription {
 }
 
 type State struct {
+	Command []string `json:"command"`
 }
 
 func prepareCollectionRun(w http.ResponseWriter, _ *http.Request, body []byte) {
@@ -136,6 +138,52 @@ func PrepareCollectionRun(body []byte) (*State, *attack_kit_api.AttackKitError) 
 	if err != nil {
 		return nil, attack_kit_api.Ptr(utils.ToError("Failed to parse request body", err))
 	}
+	// create command
+	var state State
+	state.Command = []string{
+		"newman",
+		"run",
+		fmt.Sprintf("https://api.getpostman.com/collections/%s?apikey=%s", request.Config["collectionId"], request.Config["apiKey"]),
+	}
+	if request.Config["environmentId"] != "" {
+		state.Command = append(state.Command, fmt.Sprintf("--environment"))
+		state.Command = append(state.Command, fmt.Sprintf("https://api.getpostman.com/environments/%s?apikey=%s", request.Config["environmentId"], request.Config["apiKey"]))
+	}
+	if request.Config["environment"] != nil {
+		for key, value := range request.Config["environment"].(map[string]interface{}) {
+			if value != nil {
+				state.Command = append(state.Command, fmt.Sprintf("-env-var"))
+				state.Command = append(state.Command, fmt.Sprintf("%s=%s", key, value))
+			}
+		}
+	}
+	if request.Config["verbose"] != nil {
+		state.Command = append(state.Command, fmt.Sprintf("--verbose"))
+	}
+	if request.Config["bail"] != nil {
+		state.Command = append(state.Command, fmt.Sprintf("--bail"))
+	}
+	if request.Config["timeout"] != nil {
+		state.Command = append(state.Command, fmt.Sprintf("--timeout"))
+		state.Command = append(state.Command, fmt.Sprintf("%.0f", request.Config["timeout"].(float64)))
+	}
+	if request.Config["timeoutRequest"] != nil {
+		state.Command = append(state.Command, fmt.Sprintf("--timeout-request"))
+		state.Command = append(state.Command, fmt.Sprintf("%.0f", request.Config["timeoutRequest"].(float64)))
+	}
 
-	return attack_kit_api.Ptr(State{}), nil
+	state.Command = append(state.Command, fmt.Sprintf("--reporters"))
+	state.Command = append(state.Command, fmt.Sprintf("cli,json-summary,htmlextra"))
+	state.Command = append(state.Command, fmt.Sprintf("--reporter-summary-json-export"))
+	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result-summary.json"))
+	state.Command = append(state.Command, fmt.Sprintf("--reporter-htmlextra-export"))
+	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result.html"))
+	state.Command = append(state.Command, fmt.Sprintf("--reporter-htmlextra-omitResponseBodies"))
+
+	if request.Config["iterations"] != nil && request.Config["iterations"].(float64) > 1 {
+		state.Command = append(state.Command, fmt.Sprintf("-n"))
+		state.Command = append(state.Command, fmt.Sprintf("%.0f", request.Config["iterations"].(float64)))
+	}
+
+	return &state, nil
 }
