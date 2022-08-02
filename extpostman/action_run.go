@@ -11,6 +11,7 @@ import (
 	"github.com/steadybit/attack-kit/go/attack_kit_api"
 	"github.com/steadybit/extension-postman/utils"
 	"net/http"
+	"os"
 	"os/exec"
 )
 
@@ -18,6 +19,7 @@ func RegisterHandlers() {
 	utils.RegisterHttpHandler("/postman/collection/run", utils.GetterAsHandler(getActionDescription))
 	utils.RegisterHttpHandler("/postman/collection/run/prepare", prepareCollectionRun)
 	utils.RegisterHttpHandler("/postman/collection/run/start", startCollectionRun)
+	utils.RegisterHttpHandler("/postman/collection/run/stop", stopCollectionRun)
 }
 
 func getActionDescription() attack_kit_api.AttackDescription {
@@ -124,6 +126,7 @@ func getActionDescription() attack_kit_api.AttackDescription {
 
 type State struct {
 	Command []string `json:"command"`
+	Pid     int      `json:"pid"`
 }
 
 func prepareCollectionRun(w http.ResponseWriter, _ *http.Request, body []byte) {
@@ -200,7 +203,7 @@ func startCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
 	}
 }
 
-func StartCollectionRun(ctx context.Context, body []byte) (*State, *attack_kit_api.AttackKitError) {
+func StartCollectionRun(_ context.Context, body []byte) (*State, *attack_kit_api.AttackKitError) {
 	var request attack_kit_api.StartAttackRequestBody
 	err := json.Unmarshal(body, &request)
 	if err != nil {
@@ -214,13 +217,46 @@ func StartCollectionRun(ctx context.Context, body []byte) (*State, *attack_kit_a
 	}
 
 	cmd := exec.Command(state.Command[0], state.Command[1:]...)
-	cmdOut, cmdErr := cmd.CombinedOutput()
+	cmdErr := cmd.Start()
 	if cmdErr != nil {
 		return nil, attack_kit_api.Ptr(utils.ToError(fmt.Sprintf("Failed to execute postman action"), cmdErr))
 	}
+	state.Pid = cmd.Process.Pid
+	log.Info().Msgf("Started extension-postman")
 
-	cmdOutStr := string(cmdOut)
-	log.Info().Msgf("Started extension-postman with output: %s", cmdOutStr)
+	return &state, nil
+}
+
+func stopCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
+	state, err := StopCollectionRun(r.Context(), body)
+	if err != nil {
+		utils.WriteError(w, *err)
+	} else {
+		utils.WriteBody(w, state)
+	}
+}
+
+func StopCollectionRun(_ context.Context, body []byte) (*State, *attack_kit_api.AttackKitError) {
+	var request attack_kit_api.StopAttackRequestBody
+	err := json.Unmarshal(body, &request)
+	if err != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError("Failed to parse request body", err))
+	}
+
+	var state State
+	err = utils.DecodeAttackState(request.State, &state)
+	if err != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError("Failed to parse attack state", err))
+	}
+
+	process, err := os.FindProcess(state.Pid)
+	if err != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError("Failed to find process", err))
+	}
+	err = process.Kill()
+	if err != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError("Failed to kill process", err))
+	}
 
 	return &state, nil
 }
