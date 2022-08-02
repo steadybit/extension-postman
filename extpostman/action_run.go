@@ -7,9 +7,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"github.com/steadybit/attack-kit/go/attack_kit_api"
 	"github.com/steadybit/extension-postman/utils"
 	"net/http"
+	"os/exec"
 )
 
 func RegisterHandlers() {
@@ -210,6 +212,15 @@ func StartCollectionRun(ctx context.Context, body []byte) (*State, *attack_kit_a
 	if err != nil {
 		return nil, attack_kit_api.Ptr(utils.ToError("Failed to parse attack state", err))
 	}
+
+	cmd := exec.Command(state.Command[0], state.Command[1:]...)
+	cmdOut, cmdErr := cmd.CombinedOutput()
+	if cmdErr != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError(fmt.Sprintf("Failed to execute postman action"), err))
+	}
+
+	cmdOutStr := string(cmdOut)
+	log.Info().Msgf("Started extension-postman with output: %s", cmdOutStr)
 
 	return &state, nil
 }
