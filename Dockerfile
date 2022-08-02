@@ -18,7 +18,7 @@ RUN go build -o /extension-postman
 ##
 ## Runtime
 ##
-FROM loadimpact/k6:latest
+FROM postman/newman:latest
 
 RUN  npm install -g newman-reporter-json-summary
 RUN  npm install -g newman-reporter-htmlextra
