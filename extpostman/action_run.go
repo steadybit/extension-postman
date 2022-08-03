@@ -4,12 +4,15 @@
 package extpostman
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/attack-kit/go/attack_kit_api"
 	"github.com/steadybit/extension-postman/utils"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -234,7 +237,7 @@ func stopCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
 	}
 }
 
-func StopCollectionRun(_ context.Context, body []byte) (*State, *attack_kit_api.AttackKitError) {
+func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResult, *attack_kit_api.AttackKitError) {
 	var request attack_kit_api.StopAttackRequestBody
 	err := json.Unmarshal(body, &request)
 	if err != nil {
@@ -256,5 +259,41 @@ func StopCollectionRun(_ context.Context, body []byte) (*State, *attack_kit_api.
 		return nil, attack_kit_api.Ptr(utils.ToError("Failed to kill process", err))
 	}
 
-	return &state, nil
+	summary, err := file2Base64("/tmp/newman-result-summary.json")
+	if err != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError("Failed to open summary file", err))
+	}
+
+	html, err := file2Base64("/tmp/newman-result.html")
+	if err != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError("Failed to open html file", err))
+	}
+
+	return &attack_kit_api.StopResult{
+		Artifacts: attack_kit_api.Ptr([]attack_kit_api.Artifact{
+			{
+				Label: "$(experimentKey)_$(executionId)_postman.json.tar",
+				Data:  summary,
+			}, {
+				Label: "$(experimentKey)_$(executionId)_postman.html.tar",
+				Data:  html,
+			},
+		}),
+	}, nil
+}
+
+func file2Base64(file string) (string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	var buffer bytes.Buffer
+	_, err = io.Copy(&buffer, f)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.StdEncoding.EncodeToString(buffer.Bytes()), nil
 }
