@@ -96,8 +96,8 @@ func WriteAttackState[T any](w http.ResponseWriter, state T) {
 	if err != nil {
 		WriteError(w, ToError("Failed to encode attack state", err))
 	} else {
-		WriteBody(w, attack_kit_api.AttackStateAndMessages{
-			State: encodedState,
+		WriteBody(w, attack_kit_api.StatusResult{
+			State: &encodedState,
 		})
 	}
 }

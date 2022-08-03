@@ -27,10 +27,8 @@ func getActionDescription() attack_kit_api.AttackDescription {
 		Id:          "com.github.steadybit.extension_postman.collection.run",
 		Label:       "Postman",
 		Description: "Integrate a Postman Collection via Postman Cloud API.",
-		Version:     "1.0.0",
+		Version:     "0.0.1",
 		Icon:        attack_kit_api.Ptr(icon),
-		TargetType:  "host",               //FIXME - nil
-		Category:    attack_kit_api.State, //FIXME - "Custom integrations"
 		TimeControl: attack_kit_api.INTERNAL,
 		Parameters: []attack_kit_api.AttackParameter{
 			{
