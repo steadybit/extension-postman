@@ -157,11 +157,10 @@ func PrepareCollectionRun(body []byte) (*State, *attack_kit_api.AttackKitError) 
 		state.Command = append(state.Command, fmt.Sprintf("https://api.getpostman.com/environments/%s?apikey=%s", request.Config["environmentId"], request.Config["apiKey"]))
 	}
 	if request.Config["environment"] != nil {
-		for key, value := range request.Config["environment"].(map[string]interface{}) {
-			if value != nil {
-				state.Command = append(state.Command, fmt.Sprintf("-env-var"))
-				state.Command = append(state.Command, fmt.Sprintf("%s=%s", key, value))
-			}
+		for _, value := range request.Config["environment"].([]interface{}) {
+			cast := value.(map[string]interface{})
+			state.Command = append(state.Command, fmt.Sprintf("-env-var"))
+			state.Command = append(state.Command, fmt.Sprintf("%s=%s", cast["key"], cast["value"]))
 		}
 	}
 	if request.Config["verbose"] != nil {
