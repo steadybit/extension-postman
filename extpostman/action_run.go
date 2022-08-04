@@ -122,6 +122,10 @@ func getActionDescription() attack_kit_api.AttackDescription {
 			Method: "POST",
 			Path:   "/postman/collection/run/start",
 		},
+		Stop: attack_kit_api.Ptr(attack_kit_api.MutatingEndpointReference{
+			Method: "POST",
+			Path:   "/postman/collection/run/stop",
+		}),
 	}
 }
 
