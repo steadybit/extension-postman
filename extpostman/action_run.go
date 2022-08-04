@@ -13,10 +13,10 @@ import (
 	"github.com/steadybit/attack-kit/go/attack_kit_api"
 	"github.com/steadybit/extension-postman/utils"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 )
 
@@ -230,14 +230,26 @@ func StartCollectionRun(_ context.Context, body []byte) (*State, *attack_kit_api
 	// start command
 	log.Info().Msgf("Starting attack with command: %s", strings.Join(state.Command, " "))
 	cmd := exec.Command(state.Command[0], state.Command[1:]...)
-	cmdErr := cmd.Start()
-	if cmdErr != nil {
-		return nil, attack_kit_api.Ptr(utils.ToError(fmt.Sprintf("Failed to execute postman action"), cmdErr))
+	outfile, err := os.Create("/tmp/newmanStdOut.log")
+	if err != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError("Failed to create log file", err))
 	}
+	cmd.Stdout = outfile
+	cmd.Stderr = outfile
+	cmd.Start()
 	state.Pid = cmd.Process.Pid
 	go func() {
-		err = cmd.Wait()
-		fmt.Printf("newman finished with error: %v", err)
+		cmdErr := cmd.Wait()
+		outfile.Close()
+		if cmdErr != nil {
+			log.Error().Msgf("Failed to execute postman action: %s", cmdErr)
+		}
+		var exitCode string
+		exitCode = fmt.Sprintf("%d", cmd.ProcessState.ExitCode())
+		err = ioutil.WriteFile("/tmp/newmanExitCode", []byte(exitCode), 0644)
+		if err != nil {
+			log.Error().Msgf("Failed to write exit code to file: %s", err)
+		}
 	}()
 	log.Info().Msgf("Started extension-postman")
 
@@ -263,19 +275,16 @@ func StatusCollectionRun(_ context.Context, body []byte) (*attack_kit_api.Status
 
 	log.Info().Msgf("Checking collection run status for %s\n", attackStatusRequest)
 
-	pid := int(attackStatusRequest.State["Pid"].(float64))
 	completed := false
 
-	out, err := exec.Command("kill", "-s", "0", strconv.Itoa(pid)).CombinedOutput()
-	log.Debug().Msgf("Process out: %s", out)
-	if strings.Contains(string(out), "No such process") {
+	// check if postman is still running
+	_, err = os.Stat("/tmp/newmanStdOut.log")
+	if err != nil {
+		log.Info().Msgf("Postman is still running")
+	} else {
+		log.Info().Msgf("Postman is not running anymore")
 		completed = true
 	}
-	if err != nil {
-		log.Debug().Msgf("Process check error: %s", err)
-	}
-
-	log.Info().Msgf("Collection run status runnig: %s\n", completed)
 
 	return &attack_kit_api.StatusResult{
 		Completed: completed,
