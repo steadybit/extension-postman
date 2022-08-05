@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 func RegisterHandlers() {
@@ -137,8 +138,9 @@ func getActionDescription() attack_kit_api.AttackDescription {
 }
 
 type State struct {
-	Command []string `json:"command"`
-	Pid     int      `json:"pid"`
+	Command   []string `json:"command"`
+	Pid       int      `json:"pid"`
+	Timestamp string   `json:"timestamp"`
 }
 
 func prepareCollectionRun(w http.ResponseWriter, _ *http.Request, body []byte) {
@@ -158,6 +160,7 @@ func PrepareCollectionRun(body []byte) (*State, *attack_kit_api.AttackKitError) 
 	}
 	// create command
 	var state State
+	state.Timestamp = time.Now().Format(time.RFC3339)
 	state.Command = []string{
 		"newman",
 		"run",
@@ -192,9 +195,9 @@ func PrepareCollectionRun(body []byte) (*State, *attack_kit_api.AttackKitError) 
 	state.Command = append(state.Command, fmt.Sprintf("--reporters"))
 	state.Command = append(state.Command, fmt.Sprintf("cli,json-summary,htmlextra"))
 	state.Command = append(state.Command, fmt.Sprintf("--reporter-summary-json-export"))
-	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result-summary.json"))
+	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result-summary_%s.json", state.Timestamp))
 	state.Command = append(state.Command, fmt.Sprintf("--reporter-htmlextra-export"))
-	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result.html"))
+	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result_%s.html", state.Timestamp))
 	state.Command = append(state.Command, fmt.Sprintf("--reporter-htmlextra-omitResponseBodies"))
 
 	if request.Config["iterations"] != nil && request.Config["iterations"].(float64) > 1 {
@@ -230,7 +233,7 @@ func StartCollectionRun(_ context.Context, body []byte) (*State, *attack_kit_api
 	// start command
 	log.Info().Msgf("Starting attack with command: %s", strings.Join(state.Command, " "))
 	cmd := exec.Command(state.Command[0], state.Command[1:]...)
-	outfile, err := os.Create("/tmp/newmanStdOut.log")
+	outfile, err := os.Create(fmt.Sprintf("/tmp/newmanStdOut_%s.log", state.Timestamp))
 	if err != nil {
 		return nil, attack_kit_api.Ptr(utils.ToError("Failed to create log file", err))
 	}
@@ -246,7 +249,7 @@ func StartCollectionRun(_ context.Context, body []byte) (*State, *attack_kit_api
 		}
 		var exitCode string
 		exitCode = fmt.Sprintf("%d", cmd.ProcessState.ExitCode())
-		err = ioutil.WriteFile("/tmp/newmanExitCode", []byte(exitCode), 0644)
+		err = ioutil.WriteFile(fmt.Sprintf("/tmp/newmanExitCode_%s", state.Timestamp), []byte(exitCode), 0644)
 		if err != nil {
 			log.Error().Msgf("Failed to write exit code to file: %s", err)
 		}
@@ -278,12 +281,30 @@ func StatusCollectionRun(_ context.Context, body []byte) (*attack_kit_api.Status
 	completed := false
 
 	// check if postman is still running
-	_, err = os.Stat("/tmp/newmanStdOut.log")
+	timestamp := attackStatusRequest.State["Timestamp"].(string)
+	_, err = os.Stat(fmt.Sprintf("/tmp/newmanStdOut_%s.log", timestamp))
 	if err != nil {
 		log.Info().Msgf("Postman is still running")
 	} else {
 		log.Info().Msgf("Postman is not running anymore")
 		completed = true
+	}
+
+	if completed {
+		// read file with exit code
+		exitCode, err := ioutil.ReadFile(fmt.Sprintf("/tmp/newmanExitCode_%s", timestamp))
+		if err != nil {
+			return nil, attack_kit_api.Ptr(utils.ToError("Failed to open exit code file", err))
+		}
+
+		if string(exitCode) == "0" {
+			log.Info().Msgf("Postman run completed successfully")
+		} else {
+			return nil, attack_kit_api.Ptr(utils.ToError("Postman run failed", nil))
+		}
+
+		// todo send stdout and stderr to attack status
+		// todo send artifacts here 
 	}
 
 	return &attack_kit_api.StatusResult{
@@ -313,18 +334,20 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 		return nil, attack_kit_api.Ptr(utils.ToError("Failed to parse attack state", err))
 	}
 
-	process, err := os.FindProcess(state.Pid)
+	var pid = state.Pid
+	var timestamp = state.Timestamp
+	process, err := os.FindProcess(pid)
 	if err != nil {
 		return nil, attack_kit_api.Ptr(utils.ToError("Failed to find process", err))
 	}
 	process.Kill()
 
-	summary, err := file2Base64("/tmp/newman-result-summary.json")
+	summary, err := file2Base64(fmt.Sprintf("/tmp/newman-result-summary_%s.json", timestamp))
 	if err != nil {
 		return nil, attack_kit_api.Ptr(utils.ToError("Failed to open summary file", err))
 	}
 
-	html, err := file2Base64("/tmp/newman-result.html")
+	html, err := file2Base64(fmt.Sprintf("/tmp/newman-result_%s.html", timestamp))
 	if err != nil {
 		return nil, attack_kit_api.Ptr(utils.ToError("Failed to open html file", err))
 	}
