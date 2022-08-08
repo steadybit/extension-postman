@@ -12,6 +12,10 @@ import (
 	"testing"
 )
 
+func removeAtIndex(s []string, index int) []string {
+	return append(s[:index], s[index+1:]...)
+}
+
 func TestPrepareCollectionRun(t *testing.T) {
 	// Given
 	requestBody := attack_kit_api.PrepareAttackRequestBody{
@@ -41,7 +45,7 @@ func TestPrepareCollectionRun(t *testing.T) {
 	// Then
 	assert.Nil(t, attackErr)
 	assert.Equal(t, "newman", state.Command[0])
-	assert.Equal(t, []string([]string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/env1?apikey=123456", "-env-var", "Test1=foo", "-env-var", "Test2=bar", "--verbose", "--bail", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "/tmp/newman-result-summary.json", "--reporter-htmlextra-export", "/tmp/newman-result.html", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}), state.Command)
+	assert.Equal(t, []string([]string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/env1?apikey=123456", "-env-var", "Test1=foo", "-env-var", "Test2=bar", "--verbose", "--bail", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "--reporter-htmlextra-export", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}), removeAtIndex(removeAtIndex(state.Command, 18), 19))
 }
 
 func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
@@ -70,5 +74,5 @@ func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
 	// Then
 	assert.Nil(t, attackErr)
 	assert.Equal(t, "newman", state.Command[0])
-	assert.Equal(t, []string([]string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/env1?apikey=123456", "--verbose", "--bail", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "/tmp/newman-result-summary.json", "--reporter-htmlextra-export", "/tmp/newman-result.html", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}), state.Command)
+	assert.Equal(t, []string([]string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/env1?apikey=123456", "--verbose", "--bail", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "--reporter-htmlextra-export", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}), removeAtIndex(removeAtIndex(state.Command, 14), 15))
 }
