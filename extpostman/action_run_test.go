@@ -34,7 +34,7 @@ func TestPrepareCollectionRun(t *testing.T) {
 			"verbose":        false,
 			"bail":           true,
 		},
-		Target: attack_kit_api.Target{},
+		Target: &attack_kit_api.Target{},
 	}
 	requestBodyJson, err := json.Marshal(requestBody)
 	require.Nil(t, err)
@@ -63,7 +63,7 @@ func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
 			"verbose":        false,
 			"bail":           true,
 		},
-		Target: attack_kit_api.Target{},
+		Target: &attack_kit_api.Target{},
 	}
 	requestBodyJson, err := json.Marshal(requestBody)
 	require.Nil(t, err)

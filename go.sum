@@ -15,8 +15,10 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/rs/xid v1.3.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
 github.com/rs/zerolog v1.27.0 h1:1T7qCieN22GVc8S4Q2yuexzBb1EqjbgjSH9RohbMjKs=
 github.com/rs/zerolog v1.27.0/go.mod h1:7frBqO0oezxmnO7GF86FY++uy8I0Tk/If5ni1G9Qc0U=
-github.com/steadybit/attack-kit/go/attack_kit_api v0.5.1-0.20220802144018-230f9ddb19cd h1:SeH0aox7de9Bd7mfuIDS55gakL+Q66Vz/zrzqnCvi2Y=
-github.com/steadybit/attack-kit/go/attack_kit_api v0.5.1-0.20220802144018-230f9ddb19cd/go.mod h1:Om4Mnj5sTU1FgmDhJXBu7Ezfkz/UBz6zEGm6nqkIpAY=
+github.com/steadybit/attack-kit/go/attack_kit_api v0.5.1-0.20220805132308-8e0365ef729b h1:kzoqLi0Am0yKU15I8gJOQziMHD+ei2NXMR2xY1nBxHc=
+github.com/steadybit/attack-kit/go/attack_kit_api v0.5.1-0.20220805132308-8e0365ef729b/go.mod h1:Om4Mnj5sTU1FgmDhJXBu7Ezfkz/UBz6zEGm6nqkIpAY=
+github.com/steadybit/extension-kit v1.0.1 h1:hPQ9OH1frJTwDFX6Zxukq64rB8JN/sSdS5w//xAgP3c=
+github.com/steadybit/extension-kit v1.0.1/go.mod h1:seWX5KR2odyYFBB0C9/fPdjSGi8bUU/LSdpVldX59RA=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=

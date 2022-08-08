@@ -5,7 +5,8 @@ go 1.18
 require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rs/zerolog v1.27.0
-	github.com/steadybit/attack-kit/go/attack_kit_api v0.5.1-0.20220802144018-230f9ddb19cd
+	github.com/steadybit/attack-kit/go/attack_kit_api v0.5.1-0.20220805132308-8e0365ef729b
+	github.com/steadybit/extension-kit v1.0.1
 	github.com/stretchr/testify v1.8.0
 )
 

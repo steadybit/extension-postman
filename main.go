@@ -8,8 +8,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/attack-kit/go/attack_kit_api"
+	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-postman/extpostman"
-	"github.com/steadybit/extension-postman/utils"
 	"net/http"
 	"os"
 )
@@ -18,7 +18,7 @@ func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
-	utils.RegisterHttpHandler("/", utils.GetterAsHandler(getAttackList))
+	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(getAttackList))
 
 	extpostman.RegisterHandlers()
 
