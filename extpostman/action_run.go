@@ -35,9 +35,9 @@ func RegisterHandlers() {
 func getActionDescription() attack_kit_api.AttackDescription {
 	return attack_kit_api.AttackDescription{
 		Id:          "com.github.steadybit.extension_postman.collection.run",
-		Label:       "Postman",
+		Label:       "Postman (extension)",
 		Description: "Integrate a Postman Collection via Postman Cloud API.",
-		Version:     "0.0.1",
+		Version:     "0.0.1-SNAPSHOT",
 		Kind:        attack_kit_api.CHECK,
 		Icon:        extutil.Ptr(icon),
 		TimeControl: attack_kit_api.INTERNAL,
