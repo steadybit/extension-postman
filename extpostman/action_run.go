@@ -4,9 +4,7 @@
 package extpostman
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog/log"
@@ -15,7 +13,6 @@ import (
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/steadybit/extension-postman/utils"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -369,56 +366,73 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse attack state", err))
 	}
 
-	var pid = state.Pid
 	var timestamp = state.Timestamp
+
+	// kill postman if it is still running
+	var pid = state.Pid
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to find process", err))
 	}
 	process.Kill()
 
-	summary, err := file2Base64(fmt.Sprintf("/tmp/newman-result-summary_%s.json", timestamp))
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to open summary file", err))
-	}
-
-	html, err := file2Base64(fmt.Sprintf("/tmp/newman-result_%s.html", timestamp))
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to open html file", err))
-	}
-
+	// read Stout and Stderr and send it as Messages
 	var stdOutLineCount = state.StdOutLineCount
 	messages, _, err := getStdOutToMessages(stdOutLineCount, timestamp)
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to get stdout", err))
 	}
 
+	// read return code and send it as Message
+	exitCode, err := ioutil.ReadFile(fmt.Sprintf("/tmp/newmanExitCode_%s", timestamp))
+	if err != nil {
+		return nil, extutil.Ptr(extension_kit.ToError("Failed to open exit code file", err))
+	}
+
+	if string(exitCode) != "0" {
+		messages = append(messages, attack_kit_api.Message{
+			Level:   extutil.Ptr(attack_kit_api.Error),
+			Message: "Postman run failed with exit code " + string(exitCode),
+		})
+	}
+
+	var summaryFileContent string
+	var htmlResultFileContent string
+
+	var artifacts []attack_kit_api.Artifact
+
+	// check if summary file exists and send it as artifact
+	const ResultSummaryFileName = "/tmp/newman-result-summary_%s.json"
+	_, err = os.Stat(fmt.Sprintf(ResultSummaryFileName, timestamp))
+
+	if err == nil { // file exists
+		summaryFileContent, err = utils.File2Base64(fmt.Sprintf(ResultSummaryFileName, timestamp))
+		if err != nil {
+			return nil, extutil.Ptr(extension_kit.ToError("Failed to open summaryFileContent file", err))
+		}
+		artifacts = append(artifacts, attack_kit_api.Artifact{
+			Label: "$(experimentKey)_$(executionId)_postman.json",
+			Data:  summaryFileContent,
+		})
+	}
+
+	// check if html result file exists and send it as artifact
+	const ResultFileName = "/tmp/newman-result_%s.html"
+	_, err = os.Stat(fmt.Sprintf(ResultFileName, timestamp))
+
+	if err == nil { // file exists
+		htmlResultFileContent, err = utils.File2Base64(fmt.Sprintf(ResultFileName, timestamp))
+		if err != nil {
+			return nil, extutil.Ptr(extension_kit.ToError("Failed to open htmlResultFileContent file", err))
+		}
+		artifacts = append(artifacts, attack_kit_api.Artifact{
+			Label: "$(experimentKey)_$(executionId)_postman.html",
+			Data:  htmlResultFileContent,
+		})
+	}
+
 	return &attack_kit_api.StopResult{
-		Artifacts: extutil.Ptr([]attack_kit_api.Artifact{
-			{
-				Label: "$(experimentKey)_$(executionId)_postman.json",
-				Data:  summary,
-			}, {
-				Label: "$(experimentKey)_$(executionId)_postman.html",
-				Data:  html,
-			},
-		}),
-		Messages: extutil.Ptr(messages),
+		Artifacts: extutil.Ptr(artifacts),
+		Messages:  extutil.Ptr(messages),
 	}, nil
-}
-
-func file2Base64(file string) (string, error) {
-	f, err := os.Open(file)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	var buffer bytes.Buffer
-	_, err = io.Copy(&buffer, f)
-	if err != nil {
-		return "", err
-	}
-
-	return base64.StdEncoding.EncodeToString(buffer.Bytes()), nil
 }
