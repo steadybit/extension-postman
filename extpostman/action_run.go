@@ -138,9 +138,10 @@ func getActionDescription() attack_kit_api.AttackDescription {
 }
 
 type State struct {
-	Command   []string `json:"command"`
-	Pid       int      `json:"pid"`
-	Timestamp string   `json:"timestamp"`
+	Command        []string `json:"command"`
+	Pid            int      `json:"pid"`
+	Timestamp      string   `json:"timestamp"`
+	StdOutLineCount int      `json:"stdOutLineCount"`
 }
 
 func prepareCollectionRun(w http.ResponseWriter, _ *http.Request, body []byte) {
@@ -256,6 +257,7 @@ func StartCollectionRun(_ context.Context, body []byte) (*State, *attack_kit_api
 	}()
 	log.Info().Msgf("Started extension-postman")
 
+	state.Command = nil
 	return &state, nil
 }
 
@@ -303,13 +305,42 @@ func StatusCollectionRun(_ context.Context, body []byte) (*attack_kit_api.Status
 			return nil, attack_kit_api.Ptr(utils.ToError("Postman run failed", nil))
 		}
 
-		// todo send stdout and stderr to attack status
-		// todo send artifacts here 
 	}
+
+	var stdOutLineCount = int(attackStatusRequest.State["StdOutLineCount"].(float64))
+	messages, lineCounter, err := getStdOutToMessages(stdOutLineCount, timestamp)
+	if err != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError("Failed to get stdout", err))
+	}
+	attackStatusRequest.State["SendStdOutLine"] = lineCounter
 
 	return &attack_kit_api.StatusResult{
 		Completed: completed,
+		State:     &attackStatusRequest.State,
+		Messages:  attack_kit_api.Ptr(messages),
 	}, nil
+}
+
+func getStdOutToMessages(stdOutLineCount int, timestamp string) ([]attack_kit_api.Message, int, error) {
+	// send stdout and stderr to attack status
+	var messages []attack_kit_api.Message
+
+	// read file with stdout
+	stdout, err := ioutil.ReadFile(fmt.Sprintf("/tmp/newmanStdOut_%s.log", timestamp))
+
+	// iterate over stdout and convert to Message if it has not been already sent
+	var lineCounter int
+	for _, line := range strings.Split(string(stdout), "\n") {
+		lineCounter++
+		if lineCounter > stdOutLineCount {
+			log.Debug().Msgf("Postman stdout: %s", line)
+			messages = append(messages, attack_kit_api.Message{
+				Level:   attack_kit_api.Ptr(attack_kit_api.Info),
+				Message: line,
+			})
+		}
+	}
+	return messages, lineCounter, err
 }
 
 func stopCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
@@ -352,16 +383,23 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 		return nil, attack_kit_api.Ptr(utils.ToError("Failed to open html file", err))
 	}
 
+	var stdOutLineCount = state.StdOutLineCount
+	messages, _, err := getStdOutToMessages(stdOutLineCount, timestamp)
+	if err != nil {
+		return nil, attack_kit_api.Ptr(utils.ToError("Failed to get stdout", err))
+	}
+
 	return &attack_kit_api.StopResult{
 		Artifacts: attack_kit_api.Ptr([]attack_kit_api.Artifact{
 			{
-				Label: "$(experimentKey)_$(executionId)_postman.json.tar",
+				Label: "$(experimentKey)_$(executionId)_postman.json",
 				Data:  summary,
 			}, {
-				Label: "$(experimentKey)_$(executionId)_postman.html.tar",
+				Label: "$(experimentKey)_$(executionId)_postman.html",
 				Data:  html,
 			},
 		}),
+		Messages:  attack_kit_api.Ptr(messages),
 	}, nil
 }
 
