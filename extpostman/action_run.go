@@ -4,6 +4,8 @@
 package extpostman
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,7 +15,6 @@ import (
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/steadybit/extension-postman/utils"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -144,6 +145,14 @@ type State struct {
 	StdOutLineCount int      `json:"stdOutLineCount"`
 }
 
+type InternalState struct {
+	Cmd        *exec.Cmd
+	outScanner *bufio.Scanner
+	out        *bytes.Buffer
+}
+
+var internalStates = make(map[string]InternalState)
+
 func prepareCollectionRun(w http.ResponseWriter, _ *http.Request, body []byte) {
 	state, err := PrepareCollectionRun(body)
 	if err != nil {
@@ -234,25 +243,27 @@ func StartCollectionRun(_ context.Context, body []byte) (*State, *extension_kit.
 	// start command
 	log.Info().Msgf("Starting attack with command: %s", strings.Join(state.Command, " "))
 	cmd := exec.Command(state.Command[0], state.Command[1:]...)
-	outfile, err := os.Create(fmt.Sprintf("/tmp/newmanStdOut_%s.log", state.Timestamp))
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to create log file", err))
-	}
-	cmd.Stdout = outfile
-	cmd.Stderr = outfile
+
+	cmdOut := new(bytes.Buffer)
+
+	//uncomment, if you want to see the output of the executed command
+	//cmd.Stdout = io.MultiWriter(os.Stdout, cmdOut)
+	cmd.Stdout = cmdOut
+	//cmd.Stderr = io.MultiWriter(os.Stderr, cmdOut)
+	cmd.Stderr = cmdOut
 	cmd.Start()
+
+	var internalState InternalState
+	internalState.Cmd = cmd
+	internalState.outScanner = bufio.NewScanner(cmdOut)
+	internalState.out = cmdOut
+	internalStates[state.Timestamp] = internalState
+
 	state.Pid = cmd.Process.Pid
 	go func() {
 		cmdErr := cmd.Wait()
-		outfile.Close()
 		if cmdErr != nil {
 			log.Error().Msgf("Failed to execute postman action: %s", cmdErr)
-		}
-		var exitCode string
-		exitCode = fmt.Sprintf("%d", cmd.ProcessState.ExitCode())
-		err = ioutil.WriteFile(fmt.Sprintf("/tmp/newmanExitCode_%s", state.Timestamp), []byte(exitCode), 0644)
-		if err != nil {
-			log.Error().Msgf("Failed to write exit code to file: %s", err)
 		}
 	}()
 	log.Info().Msgf("Started extension-postman")
@@ -282,65 +293,37 @@ func StatusCollectionRun(_ context.Context, body []byte) (*attack_kit_api.Status
 
 	completed := false
 
-	// check if postman is still running
 	timestamp := attackStatusRequest.State["Timestamp"].(string)
-	_, err = os.Stat(fmt.Sprintf("/tmp/newmanStdOut_%s.log", timestamp))
-	if err != nil {
+	internalState := internalStates[timestamp]
+
+	// check if postman is still running
+	exitCode := internalState.Cmd.ProcessState.ExitCode()
+	if exitCode == -1 {
 		log.Info().Msgf("Postman is still running")
-	} else {
-		log.Info().Msgf("Postman is not running anymore")
+	} else if exitCode == 0 {
+		log.Info().Msgf("Postman run completed successfully")
 		completed = true
+	} else {
+		//TODO add error message and do not throw a 500 here / change API to let the user know that the run failed?
+		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Postman run failed, exit-code %d", exitCode), nil))
 	}
-
-	if completed {
-		// read file with exit code
-		exitCode, err := ioutil.ReadFile(fmt.Sprintf("/tmp/newmanExitCode_%s", timestamp))
-		if err != nil {
-			return nil, extutil.Ptr(extension_kit.ToError("Failed to open exit code file", err))
-		}
-
-		if string(exitCode) == "0" {
-			log.Info().Msgf("Postman run completed successfully")
-		} else {
-			return nil, extutil.Ptr(extension_kit.ToError("Postman run failed", nil))
-		}
-
-	}
-
-	var stdOutLineCount = int(attackStatusRequest.State["StdOutLineCount"].(float64))
-	messages, lineCounter, err := getStdOutToMessages(stdOutLineCount, timestamp)
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to get stdout", err))
-	}
-	attackStatusRequest.State["SendStdOutLine"] = lineCounter
 
 	return &attack_kit_api.StatusResult{
 		Completed: completed,
 		State:     &attackStatusRequest.State,
-		Messages:  extutil.Ptr(messages),
+		Messages:  extutil.Ptr(getStdOutMessages(internalState.outScanner)),
 	}, nil
 }
 
-func getStdOutToMessages(stdOutLineCount int, timestamp string) ([]attack_kit_api.Message, int, error) {
-	// send stdout and stderr to attack status
+func getStdOutMessages(scanner *bufio.Scanner) []attack_kit_api.Message {
 	var messages []attack_kit_api.Message
-
-	// read file with stdout
-	stdout, err := ioutil.ReadFile(fmt.Sprintf("/tmp/newmanStdOut_%s.log", timestamp))
-
-	// iterate over stdout and convert to Message if it has not been already sent
-	var lineCounter int
-	for _, line := range strings.Split(string(stdout), "\n") {
-		lineCounter++
-		if lineCounter > stdOutLineCount {
-			log.Debug().Msgf("Postman stdout: %s", line)
-			messages = append(messages, attack_kit_api.Message{
-				Level:   extutil.Ptr(attack_kit_api.Info),
-				Message: line,
-			})
-		}
+	for scanner.Scan() {
+		messages = append(messages, attack_kit_api.Message{
+			Level:   extutil.Ptr(attack_kit_api.Info),
+			Message: scanner.Text(),
+		})
 	}
-	return messages, lineCounter, err
+	return messages
 }
 
 func stopCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
@@ -366,6 +349,7 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 	}
 
 	var timestamp = state.Timestamp
+	internalState := internalStates[timestamp]
 
 	// kill postman if it is still running
 	var pid = state.Pid
@@ -376,19 +360,11 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 	process.Kill()
 
 	// read Stout and Stderr and send it as Messages
-	var stdOutLineCount = state.StdOutLineCount
-	messages, _, err := getStdOutToMessages(stdOutLineCount, timestamp)
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to get stdout", err))
-	}
+	messages := getStdOutMessages(internalState.outScanner)
 
 	// read return code and send it as Message
-	exitCode, err := ioutil.ReadFile(fmt.Sprintf("/tmp/newmanExitCode_%s", timestamp))
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to open exit code file", err))
-	}
-
-	if string(exitCode) != "0" {
+	exitCode := internalState.Cmd.ProcessState.ExitCode()
+	if exitCode != 0 {
 		messages = append(messages, attack_kit_api.Message{
 			Level:   extutil.Ptr(attack_kit_api.Error),
 			Message: "Postman run failed with exit code " + string(exitCode),
