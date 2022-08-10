@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -146,9 +147,25 @@ type State struct {
 }
 
 type InternalState struct {
-	Cmd        *exec.Cmd
-	outScanner *bufio.Scanner
-	out        *bytes.Buffer
+	Cmd *exec.Cmd
+	mu  *sync.Mutex
+	out *bytes.Buffer
+}
+
+func (is *InternalState) Write(p []byte) (n int, err error) {
+	is.mu.Lock()
+	defer is.mu.Unlock()
+	return is.out.Write(p)
+}
+
+func (is *InternalState) Bytes() []byte {
+	is.mu.Lock()
+	defer is.mu.Unlock()
+	bytes := is.out.Bytes()
+	// Copy because bytes is only usable until we unlock the mutex
+	result := make([]byte, len(bytes))
+	copy(result, bytes)
+	return result
 }
 
 var internalStates = make(map[string]InternalState)
@@ -244,19 +261,20 @@ func StartCollectionRun(_ context.Context, body []byte) (*State, *extension_kit.
 	log.Info().Msgf("Starting attack with command: %s", strings.Join(state.Command, " "))
 	cmd := exec.Command(state.Command[0], state.Command[1:]...)
 
-	cmdOut := new(bytes.Buffer)
+	var internalState InternalState
+	internalState.out = new(bytes.Buffer)
+	internalState.Cmd = cmd
 
 	//uncomment, if you want to see the output of the executed command
 	//cmd.Stdout = io.MultiWriter(os.Stdout, cmdOut)
-	cmd.Stdout = cmdOut
+	cmd.Stdout = &internalState
 	//cmd.Stderr = io.MultiWriter(os.Stderr, cmdOut)
-	cmd.Stderr = cmdOut
+	cmd.Stderr = &internalState
 	cmd.Start()
 
-	var internalState InternalState
-	internalState.Cmd = cmd
-	internalState.outScanner = bufio.NewScanner(cmdOut)
-	internalState.out = cmdOut
+	//internalState.out.
+	//internalState.outScanner = bufio.NewScanner(cmdOut)
+	//internalState.out = cmdOut
 	internalStates[state.Timestamp] = internalState
 
 	state.Pid = cmd.Process.Pid
