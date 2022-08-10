@@ -4,7 +4,6 @@
 package extpostman
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -158,13 +157,13 @@ func (is *InternalState) Write(p []byte) (n int, err error) {
 	return is.out.Write(p)
 }
 
-func (is *InternalState) Bytes() []byte {
+func (is *InternalState) Lines() []string {
 	is.mu.Lock()
 	defer is.mu.Unlock()
-	bytes := is.out.Bytes()
-	// Copy because bytes is only usable until we unlock the mutex
-	result := make([]byte, len(bytes))
-	copy(result, bytes)
+	var result []string
+	for line, err := is.out.ReadString('\n'); err == nil; line, err = is.out.ReadString('\n') {
+		result = append(result, line)
+	}
 	return result
 }
 
@@ -263,6 +262,7 @@ func StartCollectionRun(_ context.Context, body []byte) (*State, *extension_kit.
 
 	var internalState InternalState
 	internalState.out = new(bytes.Buffer)
+	internalState.mu = new(sync.Mutex)
 	internalState.Cmd = cmd
 
 	//uncomment, if you want to see the output of the executed command
@@ -326,19 +326,22 @@ func StatusCollectionRun(_ context.Context, body []byte) (*attack_kit_api.Status
 		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Postman run failed, exit-code %d", exitCode), nil))
 	}
 
+	messages := getStdOutMessages(internalState.Lines())
+	log.Debug().Msgf("Returning %d messages", len(messages))
+
 	return &attack_kit_api.StatusResult{
 		Completed: completed,
 		State:     &attackStatusRequest.State,
-		Messages:  extutil.Ptr(getStdOutMessages(internalState.outScanner)),
+		Messages:  extutil.Ptr(messages),
 	}, nil
 }
 
-func getStdOutMessages(scanner *bufio.Scanner) []attack_kit_api.Message {
+func getStdOutMessages(lines []string) []attack_kit_api.Message {
 	var messages []attack_kit_api.Message
-	for scanner.Scan() {
+	for _, line := range lines {
 		messages = append(messages, attack_kit_api.Message{
 			Level:   extutil.Ptr(attack_kit_api.Info),
-			Message: scanner.Text(),
+			Message: line,
 		})
 	}
 	return messages
@@ -378,7 +381,7 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 	process.Kill()
 
 	// read Stout and Stderr and send it as Messages
-	messages := getStdOutMessages(internalState.outScanner)
+	messages := getStdOutMessages(internalState.Lines())
 
 	// read return code and send it as Message
 	exitCode := internalState.Cmd.ProcessState.ExitCode()
@@ -424,6 +427,7 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 		})
 	}
 
+	log.Debug().Msgf("Returning %d messages", len(messages))
 	return &attack_kit_api.StopResult{
 		Artifacts: extutil.Ptr(artifacts),
 		Messages:  extutil.Ptr(messages),
