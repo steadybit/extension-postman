@@ -146,9 +146,10 @@ type State struct {
 }
 
 type InternalState struct {
-	Cmd *exec.Cmd
-	mu  *sync.Mutex
-	out *bytes.Buffer
+	Cmd                 *exec.Cmd
+	mu                  *sync.Mutex
+	out                 *bytes.Buffer
+	lastPartialLineRead string
 }
 
 func (is *InternalState) Write(p []byte) (n int, err error) {
@@ -157,13 +158,29 @@ func (is *InternalState) Write(p []byte) (n int, err error) {
 	return is.out.Write(p)
 }
 
-func (is *InternalState) Lines() []string {
+func (is *InternalState) Lines(includePartialLines bool) []string {
 	is.mu.Lock()
 	defer is.mu.Unlock()
+
 	var result []string
-	for line, err := is.out.ReadString('\n'); err == nil; line, err = is.out.ReadString('\n') {
+	line, err := is.out.ReadString('\n')
+	for ; err == nil; line, err = is.out.ReadString('\n') {
 		result = append(result, line)
 	}
+
+	if len(is.lastPartialLineRead) > 0 && len(result) > 0 {
+		result[0] = fmt.Sprintf("%s%s", is.lastPartialLineRead, result[0])
+		is.lastPartialLineRead = ""
+	}
+
+	if len(line) > 0 {
+		is.lastPartialLineRead = fmt.Sprintf("%s%s", is.lastPartialLineRead, line)
+	}
+
+	if includePartialLines && len(is.lastPartialLineRead) > 0 {
+		result = append(result, is.lastPartialLineRead)
+	}
+
 	return result
 }
 
@@ -326,7 +343,7 @@ func StatusCollectionRun(_ context.Context, body []byte) (*attack_kit_api.Status
 		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Postman run failed, exit-code %d", exitCode), nil))
 	}
 
-	messages := getStdOutMessages(internalState.Lines())
+	messages := getStdOutMessages(internalState.Lines(false))
 	log.Debug().Msgf("Returning %d messages", len(messages))
 
 	return &attack_kit_api.StatusResult{
@@ -381,14 +398,14 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 	process.Kill()
 
 	// read Stout and Stderr and send it as Messages
-	messages := getStdOutMessages(internalState.Lines())
+	messages := getStdOutMessages(internalState.Lines(true))
 
 	// read return code and send it as Message
 	exitCode := internalState.Cmd.ProcessState.ExitCode()
 	if exitCode != 0 {
 		messages = append(messages, attack_kit_api.Message{
 			Level:   extutil.Ptr(attack_kit_api.Error),
-			Message: "Postman run failed with exit code " + string(exitCode),
+			Message: fmt.Sprintf("Postman run failed with exit code %d", exitCode),
 		})
 	}
 
