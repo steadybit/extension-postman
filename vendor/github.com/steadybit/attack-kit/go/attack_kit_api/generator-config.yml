@@ -1,5 +1,0 @@
-package: attack_kit_api
-generate:
-  models: true
-output-options:
-  skip-prune: true
