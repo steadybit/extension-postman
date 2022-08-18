@@ -4,13 +4,13 @@
 package extpostman
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/attack-kit/go/attack_kit_api"
 	"github.com/steadybit/extension-kit"
+	"github.com/steadybit/extension-kit/extcmd"
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/steadybit/extension-postman/utils"
@@ -18,7 +18,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -141,50 +140,10 @@ func getActionDescription() attack_kit_api.AttackDescription {
 type State struct {
 	Command         []string `json:"command"`
 	Pid             int      `json:"pid"`
+	CmdStateId      string   `json:"cmdStateId"`
 	Timestamp       string   `json:"timestamp"`
 	StdOutLineCount int      `json:"stdOutLineCount"`
 }
-
-type InternalState struct {
-	Cmd                 *exec.Cmd
-	mu                  *sync.Mutex
-	out                 *bytes.Buffer
-	lastPartialLineRead string
-}
-
-func (is *InternalState) Write(p []byte) (n int, err error) {
-	is.mu.Lock()
-	defer is.mu.Unlock()
-	return is.out.Write(p)
-}
-
-func (is *InternalState) Lines(includePartialLines bool) []string {
-	is.mu.Lock()
-	defer is.mu.Unlock()
-
-	var result []string
-	line, err := is.out.ReadString('\n')
-	for ; err == nil; line, err = is.out.ReadString('\n') {
-		result = append(result, line)
-	}
-
-	if len(is.lastPartialLineRead) > 0 && len(result) > 0 {
-		result[0] = fmt.Sprintf("%s%s", is.lastPartialLineRead, result[0])
-		is.lastPartialLineRead = ""
-	}
-
-	if len(line) > 0 {
-		is.lastPartialLineRead = fmt.Sprintf("%s%s", is.lastPartialLineRead, line)
-	}
-
-	if includePartialLines && len(is.lastPartialLineRead) > 0 {
-		result = append(result, is.lastPartialLineRead)
-	}
-
-	return result
-}
-
-var internalStates = make(map[string]InternalState)
 
 func prepareCollectionRun(w http.ResponseWriter, _ *http.Request, body []byte) {
 	state, err := PrepareCollectionRun(body)
@@ -276,23 +235,9 @@ func StartCollectionRun(_ context.Context, body []byte) (*State, *extension_kit.
 	// start command
 	log.Info().Msgf("Starting attack with command: %s", strings.Join(state.Command, " "))
 	cmd := exec.Command(state.Command[0], state.Command[1:]...)
-
-	var internalState InternalState
-	internalState.out = new(bytes.Buffer)
-	internalState.mu = new(sync.Mutex)
-	internalState.Cmd = cmd
-
-	//uncomment, if you want to see the output of the executed command
-	//cmd.Stdout = io.MultiWriter(os.Stdout, cmdOut)
-	cmd.Stdout = &internalState
-	//cmd.Stderr = io.MultiWriter(os.Stderr, cmdOut)
-	cmd.Stderr = &internalState
+	cmdState := extcmd.NewCmdState(cmd)
+	state.CmdStateId = cmdState.Id
 	cmd.Start()
-
-	//internalState.out.
-	//internalState.outScanner = bufio.NewScanner(cmdOut)
-	//internalState.out = cmdOut
-	internalStates[state.Timestamp] = internalState
 
 	state.Pid = cmd.Process.Pid
 	go func() {
@@ -326,13 +271,20 @@ func StatusCollectionRun(_ context.Context, body []byte) (*attack_kit_api.Status
 
 	log.Info().Msgf("Checking collection run status for %s\n", attackStatusRequest)
 
-	completed := false
+	var state State
+	err = utils.DecodeAttackState(attackStatusRequest.State, &state)
+	if err != nil {
+		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse attack state", err))
+	}
 
-	timestamp := attackStatusRequest.State["Timestamp"].(string)
-	internalState := internalStates[timestamp]
+	completed := false
+	cmdState, err := extcmd.GetCmdState(state.CmdStateId)
+	if err != nil {
+		return nil, extutil.Ptr(extension_kit.ToError("Failed to find command state", err))
+	}
 
 	// check if postman is still running
-	exitCode := internalState.Cmd.ProcessState.ExitCode()
+	exitCode := cmdState.Cmd.ProcessState.ExitCode()
 	if exitCode == -1 {
 		log.Info().Msgf("Postman is still running")
 	} else if exitCode == 0 {
@@ -343,7 +295,7 @@ func StatusCollectionRun(_ context.Context, body []byte) (*attack_kit_api.Status
 		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Postman run failed, exit-code %d", exitCode), nil))
 	}
 
-	messages := getStdOutMessages(internalState.Lines(false))
+	messages := getStdOutMessages(cmdState.GetLines(false))
 	log.Debug().Msgf("Returning %d messages", len(messages))
 
 	return &attack_kit_api.StatusResult{
@@ -387,7 +339,10 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 	}
 
 	var timestamp = state.Timestamp
-	internalState := internalStates[timestamp]
+	cmdState, err := extcmd.GetCmdState(state.CmdStateId)
+	if err != nil {
+		return nil, extutil.Ptr(extension_kit.ToError("Failed to find command state", err))
+	}
 
 	// kill postman if it is still running
 	var pid = state.Pid
@@ -398,10 +353,10 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 	process.Kill()
 
 	// read Stout and Stderr and send it as Messages
-	messages := getStdOutMessages(internalState.Lines(true))
+	messages := getStdOutMessages(cmdState.GetLines(true))
 
 	// read return code and send it as Message
-	exitCode := internalState.Cmd.ProcessState.ExitCode()
+	exitCode := cmdState.Cmd.ProcessState.ExitCode()
 	if exitCode != 0 {
 		messages = append(messages, attack_kit_api.Message{
 			Level:   extutil.Ptr(attack_kit_api.Error),
