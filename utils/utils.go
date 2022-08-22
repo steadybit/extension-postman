@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"github.com/mitchellh/mapstructure"
-	"github.com/steadybit/attack-kit/go/attack_kit_api"
+	"github.com/steadybit/action-kit/go/action_kit_api"
 	"github.com/steadybit/extension-kit"
 	"github.com/steadybit/extension-kit/exthttp"
 	"io"
@@ -15,24 +15,24 @@ import (
 	"os"
 )
 
-func WriteAttackState[T any](w http.ResponseWriter, state T) {
-	err, encodedState := EncodeAttackState(state)
+func WriteActionState[T any](w http.ResponseWriter, state T) {
+	err, encodedState := EncodeActionState(state)
 	if err != nil {
 		exthttp.WriteError(w, extension_kit.ToError("Failed to encode attack state", err))
 	} else {
-		exthttp.WriteBody(w, attack_kit_api.StatusResult{
+		exthttp.WriteBody(w, action_kit_api.StatusResult{
 			State: &encodedState,
 		})
 	}
 }
 
-func EncodeAttackState[T any](attackState T) (error, attack_kit_api.AttackState) {
-	var result attack_kit_api.AttackState
+func EncodeActionState[T any](attackState T) (error, action_kit_api.ActionState) {
+	var result action_kit_api.ActionState
 	err := mapstructure.Decode(attackState, &result)
 	return err, result
 }
 
-func DecodeAttackState[T any](attackState attack_kit_api.AttackState, result *T) error {
+func DecodeActionState[T any](attackState action_kit_api.ActionState, result *T) error {
 	return mapstructure.Decode(attackState, result)
 }
 

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/steadybit/attack-kit/go/attack_kit_api"
+	"github.com/steadybit/action-kit/go/action_kit_api"
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-postman/extpostman"
 	"net/http"
@@ -18,7 +18,7 @@ func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
-	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(getAttackList))
+	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(getActionList))
 
 	extpostman.RegisterHandlers()
 
@@ -30,9 +30,9 @@ func main() {
 	}
 }
 
-func getAttackList() attack_kit_api.AttackList {
-	return attack_kit_api.AttackList{
-		Attacks: []attack_kit_api.DescribingEndpointReference{
+func getActionList() action_kit_api.ActionList {
+	return action_kit_api.ActionList{
+		Actions: []action_kit_api.DescribingEndpointReference{
 			{
 				"GET",
 				"/postman/collection/run",

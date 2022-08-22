@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog/log"
-	"github.com/steadybit/attack-kit/go/attack_kit_api"
+	"github.com/steadybit/action-kit/go/action_kit_api"
 	"github.com/steadybit/extension-kit"
 	"github.com/steadybit/extension-kit/extcmd"
 	"github.com/steadybit/extension-kit/exthttp"
@@ -29,16 +29,16 @@ func RegisterHandlers() {
 	exthttp.RegisterHttpHandler("/postman/collection/run/stop", stopCollectionRun)
 }
 
-func getActionDescription() attack_kit_api.AttackDescription {
-	return attack_kit_api.AttackDescription{
+func getActionDescription() action_kit_api.ActionDescription {
+	return action_kit_api.ActionDescription{
 		Id:          "com.github.steadybit.extension_postman.collection.run",
 		Label:       "Postman (extension)",
 		Description: "Integrate a Postman Collection via Postman Cloud API.",
 		Version:     "0.0.1-SNAPSHOT",
-		Kind:        attack_kit_api.CHECK,
+		Kind:        action_kit_api.Check,
 		Icon:        extutil.Ptr(icon),
-		TimeControl: attack_kit_api.INTERNAL,
-		Parameters: []attack_kit_api.AttackParameter{
+		TimeControl: action_kit_api.Internal,
+		Parameters: []action_kit_api.ActionParameter{
 			{
 				Name:         "duration",
 				Label:        "Estimated duration",
@@ -118,19 +118,19 @@ func getActionDescription() attack_kit_api.AttackDescription {
 				Advanced:    extutil.Ptr(true),
 			},
 		},
-		Prepare: attack_kit_api.MutatingEndpointReference{
+		Prepare: action_kit_api.MutatingEndpointReference{
 			Method: "POST",
 			Path:   "/postman/collection/run/prepare",
 		},
-		Start: attack_kit_api.MutatingEndpointReference{
+		Start: action_kit_api.MutatingEndpointReference{
 			Method: "POST",
 			Path:   "/postman/collection/run/start",
 		},
-		Status: extutil.Ptr(attack_kit_api.MutatingEndpointReferenceWithCallInterval{
+		Status: extutil.Ptr(action_kit_api.MutatingEndpointReferenceWithCallInterval{
 			Method: "POST",
 			Path:   "/postman/collection/run/status",
 		}),
-		Stop: extutil.Ptr(attack_kit_api.MutatingEndpointReference{
+		Stop: extutil.Ptr(action_kit_api.MutatingEndpointReference{
 			Method: "POST",
 			Path:   "/postman/collection/run/stop",
 		}),
@@ -150,12 +150,12 @@ func prepareCollectionRun(w http.ResponseWriter, _ *http.Request, body []byte) {
 	if err != nil {
 		exthttp.WriteError(w, *err)
 	} else {
-		utils.WriteAttackState(w, *state)
+		utils.WriteActionState(w, *state)
 	}
 }
 
 func PrepareCollectionRun(body []byte) (*State, *extension_kit.ExtensionError) {
-	var request attack_kit_api.PrepareAttackRequestBody
+	var request action_kit_api.PrepareActionRequestBody
 	err := json.Unmarshal(body, &request)
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse request body", err))
@@ -215,25 +215,25 @@ func startCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
 	if err != nil {
 		exthttp.WriteError(w, *err)
 	} else {
-		utils.WriteAttackState(w, *state)
+		utils.WriteActionState(w, *state)
 	}
 }
 
 func StartCollectionRun(_ context.Context, body []byte) (*State, *extension_kit.ExtensionError) {
-	var request attack_kit_api.StartAttackRequestBody
+	var request action_kit_api.StartActionRequestBody
 	err := json.Unmarshal(body, &request)
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse request body", err))
 	}
 
 	var state State
-	err = utils.DecodeAttackState(request.State, &state)
+	err = utils.DecodeActionState(request.State, &state)
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse attack state", err))
+		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse action state", err))
 	}
 
 	// start command
-	log.Info().Msgf("Starting attack with command: %s", strings.Join(state.Command, " "))
+	log.Info().Msgf("Starting action with command: %s", strings.Join(state.Command, " "))
 	cmd := exec.Command(state.Command[0], state.Command[1:]...)
 	cmdState := extcmd.NewCmdState(cmd)
 	state.CmdStateId = cmdState.Id
@@ -261,20 +261,20 @@ func statusCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
 	}
 }
 
-func StatusCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StatusResult, *extension_kit.ExtensionError) {
+func StatusCollectionRun(_ context.Context, body []byte) (*action_kit_api.StatusResult, *extension_kit.ExtensionError) {
 
-	var attackStatusRequest attack_kit_api.AttackStatusRequestBody
-	err := json.Unmarshal(body, &attackStatusRequest)
+	var actionStatusRequest action_kit_api.ActionStatusRequestBody
+	err := json.Unmarshal(body, &actionStatusRequest)
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse request body", err))
 	}
 
-	log.Info().Msgf("Checking collection run status for %s\n", attackStatusRequest)
+	log.Info().Msgf("Checking collection run status for %s\n", actionStatusRequest)
 
 	var state State
-	err = utils.DecodeAttackState(attackStatusRequest.State, &state)
+	err = utils.DecodeActionState(actionStatusRequest.State, &state)
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse attack state", err))
+		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse action state", err))
 	}
 
 	completed := false
@@ -298,18 +298,18 @@ func StatusCollectionRun(_ context.Context, body []byte) (*attack_kit_api.Status
 	messages := getStdOutMessages(cmdState.GetLines(false))
 	log.Debug().Msgf("Returning %d messages", len(messages))
 
-	return &attack_kit_api.StatusResult{
+	return &action_kit_api.StatusResult{
 		Completed: completed,
-		State:     &attackStatusRequest.State,
+		State:     &actionStatusRequest.State,
 		Messages:  extutil.Ptr(messages),
 	}, nil
 }
 
-func getStdOutMessages(lines []string) []attack_kit_api.Message {
-	var messages []attack_kit_api.Message
+func getStdOutMessages(lines []string) []action_kit_api.Message {
+	var messages []action_kit_api.Message
 	for _, line := range lines {
-		messages = append(messages, attack_kit_api.Message{
-			Level:   extutil.Ptr(attack_kit_api.Info),
+		messages = append(messages, action_kit_api.Message{
+			Level:   extutil.Ptr(action_kit_api.Info),
 			Message: line,
 		})
 	}
@@ -325,17 +325,17 @@ func stopCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
 	}
 }
 
-func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResult, *extension_kit.ExtensionError) {
-	var request attack_kit_api.StopAttackRequestBody
+func StopCollectionRun(_ context.Context, body []byte) (*action_kit_api.StopResult, *extension_kit.ExtensionError) {
+	var request action_kit_api.StopActionRequestBody
 	err := json.Unmarshal(body, &request)
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse request body", err))
 	}
 
 	var state State
-	err = utils.DecodeAttackState(request.State, &state)
+	err = utils.DecodeActionState(request.State, &state)
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse attack state", err))
+		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse action state", err))
 	}
 
 	var timestamp = state.Timestamp
@@ -358,8 +358,8 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 	// read return code and send it as Message
 	exitCode := cmdState.Cmd.ProcessState.ExitCode()
 	if exitCode != 0 {
-		messages = append(messages, attack_kit_api.Message{
-			Level:   extutil.Ptr(attack_kit_api.Error),
+		messages = append(messages, action_kit_api.Message{
+			Level:   extutil.Ptr(action_kit_api.Error),
 			Message: fmt.Sprintf("Postman run failed with exit code %d", exitCode),
 		})
 	}
@@ -367,7 +367,7 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 	var summaryFileContent string
 	var htmlResultFileContent string
 
-	var artifacts []attack_kit_api.Artifact
+	var artifacts []action_kit_api.Artifact
 
 	// check if summary file exists and send it as artifact
 	const ResultSummaryFileName = "/tmp/newman-result-summary_%s.json"
@@ -378,7 +378,7 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 		if err != nil {
 			return nil, extutil.Ptr(extension_kit.ToError("Failed to open summaryFileContent file", err))
 		}
-		artifacts = append(artifacts, attack_kit_api.Artifact{
+		artifacts = append(artifacts, action_kit_api.Artifact{
 			Label: "$(experimentKey)_$(executionId)_postman.json",
 			Data:  summaryFileContent,
 		})
@@ -393,14 +393,14 @@ func StopCollectionRun(_ context.Context, body []byte) (*attack_kit_api.StopResu
 		if err != nil {
 			return nil, extutil.Ptr(extension_kit.ToError("Failed to open htmlResultFileContent file", err))
 		}
-		artifacts = append(artifacts, attack_kit_api.Artifact{
+		artifacts = append(artifacts, action_kit_api.Artifact{
 			Label: "$(experimentKey)_$(executionId)_postman.html",
 			Data:  htmlResultFileContent,
 		})
 	}
 
 	log.Debug().Msgf("Returning %d messages", len(messages))
-	return &attack_kit_api.StopResult{
+	return &action_kit_api.StopResult{
 		Artifacts: extutil.Ptr(artifacts),
 		Messages:  extutil.Ptr(messages),
 	}, nil
