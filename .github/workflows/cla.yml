@@ -8,3 +8,5 @@ on:
 jobs:
   call-workflow:
     uses: steadybit/.github/.github/workflows/cla.yml@main
+    secrets:
+      PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
