@@ -5,18 +5,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/steadybit/action-kit/go/action_kit_api"
+	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/extension-kit/exthttp"
+	"github.com/steadybit/extension-kit/extlogging"
 	"github.com/steadybit/extension-postman/extpostman"
 	"net/http"
-	"os"
 )
 
 func main() {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	extlogging.InitZeroLog()
 
 	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(getActionList))
 

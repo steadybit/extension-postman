@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"github.com/mitchellh/mapstructure"
-	"github.com/steadybit/action-kit/go/action_kit_api"
+	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/extension-kit"
 	"github.com/steadybit/extension-kit/exthttp"
 	"io"
@@ -18,7 +18,7 @@ import (
 func WriteActionState[T any](w http.ResponseWriter, state T) {
 	err, encodedState := EncodeActionState(state)
 	if err != nil {
-		exthttp.WriteError(w, extension_kit.ToError("Failed to encode attack state", err))
+		exthttp.WriteError(w, extension_kit.ToError("Failed to encode action state", err))
 	} else {
 		exthttp.WriteBody(w, action_kit_api.StatusResult{
 			State: &encodedState,

@@ -9,7 +9,7 @@ package extpostman
 
 import (
 	"encoding/json"
-	"github.com/steadybit/action-kit/go/action_kit_api"
+	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/extension-postman/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
