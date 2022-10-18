@@ -34,7 +34,7 @@ func getActionDescription() action_kit_api.ActionDescription {
 		Id:          "com.github.steadybit.extension_postman.collection.run",
 		Label:       "Postman (extension)",
 		Description: "Integrate a Postman Collection via Postman Cloud API.",
-		Version:     "0.0.1-SNAPSHOT",
+		Version:     "1.1.1",
 		Kind:        action_kit_api.Check,
 		Icon:        extutil.Ptr(icon),
 		TimeControl: action_kit_api.Internal,
@@ -277,32 +277,35 @@ func StatusCollectionRun(_ context.Context, body []byte) (*action_kit_api.Status
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse action state", err))
 	}
 
-	completed := false
 	cmdState, err := extcmd.GetCmdState(state.CmdStateId)
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to find command state", err))
 	}
 
+	var result action_kit_api.StatusResult
+
 	// check if postman is still running
 	exitCode := cmdState.Cmd.ProcessState.ExitCode()
 	if exitCode == -1 {
 		log.Info().Msgf("Postman is still running")
+		result.Completed = false
 	} else if exitCode == 0 {
 		log.Info().Msgf("Postman run completed successfully")
-		completed = true
+		result.Completed = true
 	} else {
-		//TODO add error message and do not throw a 500 here / change API to let the user know that the run failed?
-		return nil, extutil.Ptr(extension_kit.ToError(fmt.Sprintf("Postman run failed, exit-code %d", exitCode), nil))
+		result.Error = &action_kit_api.ActionKitError{
+			Status: extutil.Ptr(action_kit_api.Failed),
+			Title:  fmt.Sprintf("Postman run failed, exit-code %d", exitCode),
+		}
+		result.Completed = true
 	}
 
 	messages := getStdOutMessages(cmdState.GetLines(false))
 	log.Debug().Msgf("Returning %d messages", len(messages))
 
-	return &action_kit_api.StatusResult{
-		Completed: completed,
-		State:     &actionStatusRequest.State,
-		Messages:  extutil.Ptr(messages),
-	}, nil
+	result.State = &actionStatusRequest.State
+	result.Messages = extutil.Ptr(messages)
+	return &result, nil
 }
 
 func getStdOutMessages(lines []string) []action_kit_api.Message {
