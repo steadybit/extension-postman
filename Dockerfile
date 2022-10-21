@@ -20,7 +20,9 @@ RUN go build -o /extension-postman
 ##
 FROM node:16-alpine
 
-RUN  npm install -g newman@5.3.2 newman-reporter-json-summary@1.0.14 newman-reporter-htmlextra@1.22.11
+ENV LC_ALL="en_US.UTF-8" LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" ALPINE_NODE_REPO="oznu/alpine-node"
+
+RUN npm install -g newman@5.3.2 newman-reporter-json-summary@1.0.14 newman-reporter-htmlextra@1.22.11
 
 WORKDIR /
 
