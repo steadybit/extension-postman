@@ -3,7 +3,7 @@
 ##
 ## Build
 ##
-FROM golang:1.18-alpine AS build
+FROM golang:1.19-alpine AS build
 
 WORKDIR /app
 
@@ -18,10 +18,9 @@ RUN go build -o /extension-postman
 ##
 ## Runtime
 ##
-FROM postman/newman:latest
+FROM node:16-alpine
 
-RUN  npm install -g newman-reporter-json-summary
-RUN  npm install -g newman-reporter-htmlextra
+RUN  npm install -g newman@5.3.2 newman-reporter-json-summary@1.0.14 newman-reporter-htmlextra@1.22.11
 
 WORKDIR /
 

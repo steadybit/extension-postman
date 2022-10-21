@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.2
+
+The `postman/newman` Docker image does not support the linux/arm64 platform.
+
 ## v1.1.1
  - Improved error handling
 
