@@ -5,6 +5,7 @@ package main
 
 import (
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
+	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extlogging"
 	"github.com/steadybit/extension-postman/extpostman"
@@ -12,6 +13,7 @@ import (
 
 func main() {
 	extlogging.InitZeroLog()
+	extbuild.PrintBuildInformation()
 
 	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(getActionList))
 
