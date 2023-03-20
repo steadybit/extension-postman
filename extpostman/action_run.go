@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/extension-kit"
+	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/extcmd"
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extutil"
@@ -32,9 +33,9 @@ func RegisterHandlers() {
 func getActionDescription() action_kit_api.ActionDescription {
 	return action_kit_api.ActionDescription{
 		Id:          "com.github.steadybit.extension_postman.collection.run",
-		Label:       "Postman (extension)",
+		Label:       "Postman",
 		Description: "Integrate a Postman Collection via Postman Cloud API.",
-		Version:     "1.1.1",
+		Version:     extbuild.GetSemverVersionStringOrUnknown(),
 		Kind:        action_kit_api.Check,
 		Icon:        extutil.Ptr(icon),
 		TimeControl: action_kit_api.Internal,

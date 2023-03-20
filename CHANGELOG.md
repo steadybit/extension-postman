@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.4.1
+
+ - Renamed the action, removed the `(extension)`
+
 ## v1.4.0
 
  - Print build information on extension startup.
