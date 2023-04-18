@@ -8,11 +8,9 @@
 package extpostman
 
 import (
-	"encoding/json"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/extension-postman/utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -36,16 +34,17 @@ func TestPrepareCollectionRun(t *testing.T) {
 		},
 		Target: &action_kit_api.Target{},
 	}
-	requestBodyJson, err := json.Marshal(requestBody)
-	require.Nil(t, err)
+	action := NewPostmanAction()
+	state := action.NewEmptyState()
 
 	// When
-	state, actionErr := PrepareCollectionRun(requestBodyJson)
+	result, err := action.Prepare(nil, &state, requestBody)
 
 	// Then
-	assert.Nil(t, actionErr)
+	assert.Nil(t, err)
+	assert.Nil(t, result)
 	assert.Equal(t, "newman", state.Command[0])
-	assert.Equal(t, []string([]string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/env1?apikey=123456", "-env-var", "Test1=foo", "-env-var", "Test2=bar", "--verbose", "--bail", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "--reporter-htmlextra-export", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}), utils.RemoveAtIndex(utils.RemoveAtIndex(state.Command, 18), 19))
+	assert.Equal(t, []string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/env1?apikey=123456", "-env-var", "Test1=foo", "-env-var", "Test2=bar", "--verbose", "--bail", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "--reporter-htmlextra-export", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}, utils.RemoveAtIndex(utils.RemoveAtIndex(state.Command, 18), 19))
 }
 
 func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
@@ -65,14 +64,15 @@ func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
 		},
 		Target: &action_kit_api.Target{},
 	}
-	requestBodyJson, err := json.Marshal(requestBody)
-	require.Nil(t, err)
+	action := NewPostmanAction()
+	state := action.NewEmptyState()
 
 	// When
-	state, acionErr := PrepareCollectionRun(requestBodyJson)
+	result, err := action.Prepare(nil, &state, requestBody)
 
 	// Then
-	assert.Nil(t, acionErr)
+	assert.Nil(t, err)
+	assert.Nil(t, result)
 	assert.Equal(t, "newman", state.Command[0])
-	assert.Equal(t, []string([]string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/env1?apikey=123456", "--verbose", "--bail", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "--reporter-htmlextra-export", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}), utils.RemoveAtIndex(utils.RemoveAtIndex(state.Command, 14), 15))
+	assert.Equal(t, []string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/env1?apikey=123456", "--verbose", "--bail", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "--reporter-htmlextra-export", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}, utils.RemoveAtIndex(utils.RemoveAtIndex(state.Command, 14), 15))
 }

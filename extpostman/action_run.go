@@ -5,32 +5,46 @@ package extpostman
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
+	"github.com/steadybit/action-kit/go/action_kit_sdk"
 	"github.com/steadybit/extension-kit"
 	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/extcmd"
-	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/steadybit/extension-postman/utils"
-	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 )
 
-func RegisterHandlers() {
-	exthttp.RegisterHttpHandler("/postman/collection/run", exthttp.GetterAsHandler(getActionDescription))
-	exthttp.RegisterHttpHandler("/postman/collection/run/prepare", prepareCollectionRun)
-	exthttp.RegisterHttpHandler("/postman/collection/run/start", startCollectionRun)
-	exthttp.RegisterHttpHandler("/postman/collection/run/status", statusCollectionRun)
-	exthttp.RegisterHttpHandler("/postman/collection/run/stop", stopCollectionRun)
+type PostmanAction struct {
 }
 
-func getActionDescription() action_kit_api.ActionDescription {
+type PostmanState struct {
+	Command         []string `json:"command"`
+	Pid             int      `json:"pid"`
+	CmdStateId      string   `json:"cmdStateId"`
+	Timestamp       string   `json:"timestamp"`
+	StdOutLineCount int      `json:"stdOutLineCount"`
+}
+
+func NewPostmanAction() action_kit_sdk.Action[PostmanState] {
+	return PostmanAction{}
+}
+
+// Make sure PostmanAction implements all required interfaces
+var _ action_kit_sdk.Action[PostmanState] = (*PostmanAction)(nil)
+var _ action_kit_sdk.ActionWithStatus[PostmanState] = (*PostmanAction)(nil)
+var _ action_kit_sdk.ActionWithStop[PostmanState] = (*PostmanAction)(nil)
+
+func (f PostmanAction) NewEmptyState() PostmanState {
+	return PostmanState{}
+}
+
+func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 	return action_kit_api.ActionDescription{
 		Id:          "com.github.steadybit.extension_postman.collection.run",
 		Label:       "Postman",
@@ -119,50 +133,14 @@ func getActionDescription() action_kit_api.ActionDescription {
 				Advanced:    extutil.Ptr(true),
 			},
 		},
-		Prepare: action_kit_api.MutatingEndpointReference{
-			Method: "POST",
-			Path:   "/postman/collection/run/prepare",
-		},
-		Start: action_kit_api.MutatingEndpointReference{
-			Method: "POST",
-			Path:   "/postman/collection/run/start",
-		},
-		Status: extutil.Ptr(action_kit_api.MutatingEndpointReferenceWithCallInterval{
-			Method: "POST",
-			Path:   "/postman/collection/run/status",
-		}),
-		Stop: extutil.Ptr(action_kit_api.MutatingEndpointReference{
-			Method: "POST",
-			Path:   "/postman/collection/run/stop",
-		}),
+		Prepare: action_kit_api.MutatingEndpointReference{},
+		Start:   action_kit_api.MutatingEndpointReference{},
+		Status:  extutil.Ptr(action_kit_api.MutatingEndpointReferenceWithCallInterval{}),
+		Stop:    extutil.Ptr(action_kit_api.MutatingEndpointReference{}),
 	}
 }
 
-type State struct {
-	Command         []string `json:"command"`
-	Pid             int      `json:"pid"`
-	CmdStateId      string   `json:"cmdStateId"`
-	Timestamp       string   `json:"timestamp"`
-	StdOutLineCount int      `json:"stdOutLineCount"`
-}
-
-func prepareCollectionRun(w http.ResponseWriter, _ *http.Request, body []byte) {
-	state, err := PrepareCollectionRun(body)
-	if err != nil {
-		exthttp.WriteError(w, *err)
-	} else {
-		utils.WriteActionState(w, *state)
-	}
-}
-
-func PrepareCollectionRun(body []byte) (*State, *extension_kit.ExtensionError) {
-	var request action_kit_api.PrepareActionRequestBody
-	err := json.Unmarshal(body, &request)
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse request body", err))
-	}
-	// create command
-	var state State
+func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, request action_kit_api.PrepareActionRequestBody) (*action_kit_api.PrepareResult, error) {
 	state.Timestamp = time.Now().Format(time.RFC3339)
 	state.Command = []string{
 		"newman",
@@ -174,10 +152,9 @@ func PrepareCollectionRun(body []byte) (*State, *extension_kit.ExtensionError) {
 		state.Command = append(state.Command, fmt.Sprintf("https://api.getpostman.com/environments/%s?apikey=%s", request.Config["environmentId"], request.Config["apiKey"]))
 	}
 	if request.Config["environment"] != nil {
-		for _, value := range request.Config["environment"].([]interface{}) {
-			cast := value.(map[string]interface{})
+		for _, value := range request.Config["environment"].([]map[string]string) {
 			state.Command = append(state.Command, fmt.Sprintf("-env-var"))
-			state.Command = append(state.Command, fmt.Sprintf("%s=%s", cast["key"], cast["value"]))
+			state.Command = append(state.Command, fmt.Sprintf("%s=%s", value["key"], value["value"]))
 		}
 	}
 	if request.Config["verbose"] != nil {
@@ -188,11 +165,11 @@ func PrepareCollectionRun(body []byte) (*State, *extension_kit.ExtensionError) {
 	}
 	if request.Config["timeout"] != nil {
 		state.Command = append(state.Command, fmt.Sprintf("--timeout"))
-		state.Command = append(state.Command, fmt.Sprintf("%.0f", request.Config["timeout"].(float64)))
+		state.Command = append(state.Command, fmt.Sprintf("%d", request.Config["timeout"].(int)))
 	}
 	if request.Config["timeoutRequest"] != nil {
 		state.Command = append(state.Command, fmt.Sprintf("--timeout-request"))
-		state.Command = append(state.Command, fmt.Sprintf("%.0f", request.Config["timeoutRequest"].(float64)))
+		state.Command = append(state.Command, fmt.Sprintf("%d", request.Config["timeoutRequest"].(int)))
 	}
 
 	state.Command = append(state.Command, fmt.Sprintf("--reporters"))
@@ -203,42 +180,22 @@ func PrepareCollectionRun(body []byte) (*State, *extension_kit.ExtensionError) {
 	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result_%s.html", state.Timestamp))
 	state.Command = append(state.Command, fmt.Sprintf("--reporter-htmlextra-omitResponseBodies"))
 
-	if request.Config["iterations"] != nil && request.Config["iterations"].(float64) > 1 {
+	if request.Config["iterations"] != nil && request.Config["iterations"].(int) > 1 {
 		state.Command = append(state.Command, fmt.Sprintf("-n"))
-		state.Command = append(state.Command, fmt.Sprintf("%.0f", request.Config["iterations"].(float64)))
+		state.Command = append(state.Command, fmt.Sprintf("%d", request.Config["iterations"].(int)))
 	}
-
-	return &state, nil
+	return nil, nil
 }
 
-func startCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
-	state, err := StartCollectionRun(r.Context(), body)
-	if err != nil {
-		exthttp.WriteError(w, *err)
-	} else {
-		utils.WriteActionState(w, *state)
-	}
-}
-
-func StartCollectionRun(_ context.Context, body []byte) (*State, *extension_kit.ExtensionError) {
-	var request action_kit_api.StartActionRequestBody
-	err := json.Unmarshal(body, &request)
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse request body", err))
-	}
-
-	var state State
-	err = utils.DecodeActionState(request.State, &state)
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse action state", err))
-	}
-
-	// start command
+func (f PostmanAction) Start(_ context.Context, state *PostmanState) (*action_kit_api.StartResult, error) {
 	log.Info().Msgf("Starting action with command: %s", strings.Join(state.Command, " "))
 	cmd := exec.Command(state.Command[0], state.Command[1:]...)
 	cmdState := extcmd.NewCmdState(cmd)
 	state.CmdStateId = cmdState.Id
-	cmd.Start()
+	err := cmd.Start()
+	if err != nil {
+		return nil, extutil.Ptr(extension_kit.ToError("Failed to start command.", err))
+	}
 
 	state.Pid = cmd.Process.Pid
 	go func() {
@@ -250,33 +207,11 @@ func StartCollectionRun(_ context.Context, body []byte) (*State, *extension_kit.
 	log.Info().Msgf("Started extension-postman")
 
 	state.Command = nil
-	return &state, nil
+	return nil, nil
 }
 
-func statusCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
-	state, err := StatusCollectionRun(r.Context(), body)
-	if err != nil {
-		exthttp.WriteError(w, *err)
-	} else {
-		exthttp.WriteBody(w, state)
-	}
-}
-
-func StatusCollectionRun(_ context.Context, body []byte) (*action_kit_api.StatusResult, *extension_kit.ExtensionError) {
-
-	var actionStatusRequest action_kit_api.ActionStatusRequestBody
-	err := json.Unmarshal(body, &actionStatusRequest)
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse request body", err))
-	}
-
-	log.Info().Msgf("Checking collection run status for %s\n", actionStatusRequest)
-
-	var state State
-	err = utils.DecodeActionState(actionStatusRequest.State, &state)
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse action state", err))
-	}
+func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_kit_api.StatusResult, error) {
+	log.Info().Msgf("Checking collection run status for %d\n", state.Pid)
 
 	cmdState, err := extcmd.GetCmdState(state.CmdStateId)
 	if err != nil {
@@ -304,7 +239,6 @@ func StatusCollectionRun(_ context.Context, body []byte) (*action_kit_api.Status
 	messages := getStdOutMessages(cmdState.GetLines(false))
 	log.Debug().Msgf("Returning %d messages", len(messages))
 
-	result.State = &actionStatusRequest.State
 	result.Messages = extutil.Ptr(messages)
 	return &result, nil
 }
@@ -320,28 +254,7 @@ func getStdOutMessages(lines []string) []action_kit_api.Message {
 	return messages
 }
 
-func stopCollectionRun(w http.ResponseWriter, r *http.Request, body []byte) {
-	state, err := StopCollectionRun(r.Context(), body)
-	if err != nil {
-		exthttp.WriteError(w, *err)
-	} else {
-		exthttp.WriteBody(w, state)
-	}
-}
-
-func StopCollectionRun(_ context.Context, body []byte) (*action_kit_api.StopResult, *extension_kit.ExtensionError) {
-	var request action_kit_api.StopActionRequestBody
-	err := json.Unmarshal(body, &request)
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse request body", err))
-	}
-
-	var state State
-	err = utils.DecodeActionState(request.State, &state)
-	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to parse action state", err))
-	}
-
+func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit_api.StopResult, error) {
 	var timestamp = state.Timestamp
 	cmdState, err := extcmd.GetCmdState(state.CmdStateId)
 	if err != nil {
@@ -354,7 +267,7 @@ func StopCollectionRun(_ context.Context, body []byte) (*action_kit_api.StopResu
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to find process", err))
 	}
-	process.Kill()
+	_ = process.Kill()
 
 	// read Stout and Stderr and send it as Messages
 	messages := getStdOutMessages(cmdState.GetLines(true))

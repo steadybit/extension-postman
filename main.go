@@ -4,8 +4,9 @@
 package main
 
 import (
-	"github.com/steadybit/action-kit/go/action_kit_api/v2"
+	"github.com/steadybit/action-kit/go/action_kit_sdk"
 	"github.com/steadybit/extension-kit/extbuild"
+	"github.com/steadybit/extension-kit/exthealth"
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extlogging"
 	"github.com/steadybit/extension-postman/extpostman"
@@ -14,23 +15,13 @@ import (
 func main() {
 	extlogging.InitZeroLog()
 	extbuild.PrintBuildInformation()
+	exthealth.StartProbes(8087)
 
-	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(getActionList))
+	action_kit_sdk.RegisterAction(extpostman.NewPostmanAction())
+	action_kit_sdk.InstallSignalHandler()
 
-	extpostman.RegisterHandlers()
-
+	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(action_kit_sdk.GetActionList))
 	exthttp.Listen(exthttp.ListenOpts{
 		Port: 8086,
 	})
-}
-
-func getActionList() action_kit_api.ActionList {
-	return action_kit_api.ActionList{
-		Actions: []action_kit_api.DescribingEndpointReference{
-			{
-				"GET",
-				"/postman/collection/run",
-			},
-		},
-	}
 }

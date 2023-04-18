@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.5.0.
+
+ - Update dependencies
+ - Refactored to use action-kit-sdk
+
 ## v1.4.1
 
  - Renamed the action, removed the `(extension)`
