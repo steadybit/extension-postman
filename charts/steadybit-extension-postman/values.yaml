@@ -7,7 +7,7 @@ image:
   # image.tag -- tag name of the extension-postman container image to use.
   # See https://hub.docker.com/r/steadybit/extension-postman for all tags.
   tag: latest
-  # image.pullPolicy -- Specifies when to pull the image container.
+  # image.pullPolicy -- Specifies when to pull the image.
   pullPolicy: Always
 
 tls:
