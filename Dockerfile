@@ -34,7 +34,7 @@ ENV LC_ALL="en_US.UTF-8" LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" ALPINE_NODE_R
 RUN npm install -g newman@5.3.2 newman-reporter-json-summary@1.0.14 newman-reporter-htmlextra@1.22.11
 
 ARG USERNAME=steadybit
-ARG USER_UID=1000
+ARG USER_UID=10000
 
 RUN adduser -u $USER_UID -D $USERNAME
 
@@ -42,8 +42,9 @@ USER $USERNAME
 
 WORKDIR /
 
-COPY --from=build /extension-postman /extension-postman
+COPY --from=build /app/extension /extension
 
 EXPOSE 8086
+EXPOSE 8087
 
-ENTRYPOINT ["/extension-postman"]
+ENTRYPOINT ["/extension"]
