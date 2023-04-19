@@ -15,28 +15,43 @@ of [Action kit](https://github.com/steadybit/action-kit).
 
 ## Configuration
 
-| Environment Variable                   |
-|----------------------------------------|
-| No additional configuration parameters |
+| Environment Variable                  | Meaning                                                                                                                                                                | Default                 |
+|---------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------|
+| `STEADYBIT_EXTENSION_ROBOT_NAMES`     | Comma-separated list of discoverable robots                                                                                                                            | Bender,Terminator,R2-D2 |
+| `STEADYBIT_EXTENSION_PORT`            | Port number that the HTTP server should bind to.                                                                                                                       | 8080                    |
+| `STEADYBIT_EXTENSION_TLS_SERVER_CERT` | Optional absolute path to a TLS certificate that will be used to open an **HTTPS** server.                                                                             |                         |
+| `STEADYBIT_EXTENSION_TLS_SERVER_KEY`  | Optional absolute path to a file containing the key to the server certificate.                                                                                         |                         |
+| `STEADYBIT_EXTENSION_TLS_CLIENT_CAS`  | Optional comma-separated list of absolute paths to files containing TLS certificates. When specified, the server will expect clients to authenticate using mutual TLS. |                         |
+| `STEADYBIT_LOG_FORMAT`                | Defines the log format that the extension will use. Possible values are `text` and `json`.                                                                             | text                    |
+| `STEADYBIT_LOG_LEVEL`                 | Defines the active log level. Possible values are `debug`, `info`, `warn` and `error`.                                                                                 | info                    |
 
-## Deployment
+## Running the Extension
 
-We recommend that you deploy the extension with our [official Helm chart](https://github.com/steadybit/helm-charts/tree/main/charts/steadybit-extension-postman)
-.
+### Using Docker
 
-## Agent Configuration
-
-The Steadybit agent needs to be configured to interact with the postman extension by adding the following environment variables:
-
-```shell
-# Make sure to adapt the URLs and indices in the environment variables names as necessary for your setup
-
-STEADYBIT_AGENT_ACTIONS_EXTENSIONS_0_URL=http://steadybit-extension-postman.steadybit-extension.svc.cluster.local:8086
+```sh
+$ docker run \
+  --rm \
+  -p 8085 \
+  --name steadybit-extension-postman \
+  ghcr.io/steadybit/extension-postman:latest
 ```
 
-When leveraging our official Helm charts, you can set the configuration through additional environment variables on the agent:
+### Using Helm in Kubernetes
 
+```sh
+$ helm repo add steadybit-extension-postman https://steadybit.github.io/extension-postman
+$ helm repo update
+$ helm upgrade steadybit-extension-postman \
+    --install \
+    --wait \
+    --timeout 5m0s \
+    --create-namespace \
+    --namespace steadybit-extension \
+    steadybit-extension-postman/steadybit-extension-postman
 ```
---set agent.env[0].name=STEADYBIT_AGENT_ACTIONS_EXTENSIONS_0_URL \
---set agent.env[0].value="http://steadybit-extension-postman.steadybit-extension.svc.cluster.local:8086" \
-```
+
+## Register the extension
+
+Make sure to register the extension at the steadybit platform. Please refer to
+the [documentation](https://docs.steadybit.com/integrate-with-steadybit/extensions/extension-installation) for more information.
