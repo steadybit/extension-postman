@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "extensionlib.names.fullname" . }}
+  name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
   {{- range $key, $value := .Values.extraLabels }}
@@ -11,16 +11,16 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "extensionlib.names.name" . }}
+      app.kubernetes.io/name: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "extensionlib.names.name" . }}
+        app.kubernetes.io/name: {{ .Release.Name }}
     spec:
       containers:
         - image: {{ .Values.image.name }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          name: extension-postman
+          name: {{ .Release.Name }}
           resources:
             requests:
               memory: {{ .Values.resources.requests.memory }}
@@ -32,6 +32,14 @@ spec:
             {{- include "extensionlib.deployment.env" (list .) | nindent 12 }}
           volumeMounts:
             {{- include "extensionlib.deployment.volumeMounts" (list .) | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 8087
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: 8087
       volumes:
         {{- include "extensionlib.deployment.volumes" (list .) | nindent 8 }}
       {{- with .Values.nodeSelector }}
