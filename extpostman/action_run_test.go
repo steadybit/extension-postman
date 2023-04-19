@@ -8,6 +8,7 @@
 package extpostman
 
 import (
+	"context"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/extension-postman/utils"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +39,7 @@ func TestPrepareCollectionRun(t *testing.T) {
 	state := action.NewEmptyState()
 
 	// When
-	result, err := action.Prepare(nil, &state, requestBody)
+	result, err := action.Prepare(context.TODO(), &state, requestBody)
 
 	// Then
 	assert.Nil(t, err)
@@ -68,7 +69,7 @@ func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
 	state := action.NewEmptyState()
 
 	// When
-	result, err := action.Prepare(nil, &state, requestBody)
+	result, err := action.Prepare(context.TODO(), &state, requestBody)
 
 	// Then
 	assert.Nil(t, err)

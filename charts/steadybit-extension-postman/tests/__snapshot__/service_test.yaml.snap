@@ -1,0 +1,68 @@
+manifest should match snapshot with TLS:
+  1: |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        steadybit.com/extension-auto-discovery: "{\n  \"extensions\": [\n    {\n      \"port\": 8086,\n      \"types\": [\"ACTION\"],\n      \"tls\": {\n        \"server\": {\n          \"extraCertsFile\": \"/opt/steadybit/agent/etc/extension-mtls/server-cert/tls.crt\"\n        }\n        \n      }\n    }\n  ]\n}\n"
+      labels: null
+      name: RELEASE-NAME-steadybit-extension-postman
+      namespace: NAMESPACE
+    spec:
+      ports:
+        - port: 8086
+          protocol: TCP
+          targetPort: 8086
+      selector:
+        app.kubernetes.io/name: steadybit-extension-postman
+manifest should match snapshot with mutual TLS:
+  1: |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        steadybit.com/extension-auto-discovery: |
+          {
+            "extensions": [
+              {
+                "port": 8086,
+                "types": ["ACTION"],
+                "tls": {
+                  "server": {
+                    "extraCertsFile": "/opt/steadybit/agent/etc/extension-mtls/server-cert/tls.crt"
+                  },
+                  "client": {
+                    "certChainFile": "/opt/steadybit/agent/etc/extension-mtls/client-cert-a/tls.crt",
+                    "certKeyFile": "/opt/steadybit/agent/etc/extension-mtls/client-cert-a/tls.key"
+                  }
+                }
+              }
+            ]
+          }
+      labels: null
+      name: RELEASE-NAME-steadybit-extension-postman
+      namespace: NAMESPACE
+    spec:
+      ports:
+        - port: 8086
+          protocol: TCP
+          targetPort: 8086
+      selector:
+        app.kubernetes.io/name: steadybit-extension-postman
+manifest should match snapshot without TLS:
+  1: |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        steadybit.com/extension-auto-discovery: "{\n  \"extensions\": [\n    {\n      \"port\": 8086,\n      \"types\": [\"ACTION\"],\n      \"tls\": {\n        \n      }\n    }\n  ]\n}\n"
+      labels: null
+      name: RELEASE-NAME-steadybit-extension-postman
+      namespace: NAMESPACE
+    spec:
+      ports:
+        - port: 8086
+          protocol: TCP
+          targetPort: 8086
+      selector:
+        app.kubernetes.io/name: steadybit-extension-postman

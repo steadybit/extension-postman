@@ -18,11 +18,11 @@ RUN go mod download
 COPY . .
 
 RUN go build \
-	-ldflags="\
-	-X 'github.com/steadybit/extension-kit/extbuild.ExtensionName=${NAME}' \
-	-X 'github.com/steadybit/extension-kit/extbuild.Version=${VERSION}' \
-	-X 'github.com/steadybit/extension-kit/extbuild.Revision=${REVISION}'" \
-	-o /extension-postman
+    -ldflags="\
+    -X 'github.com/steadybit/extension-kit/extbuild.ExtensionName=${NAME}' \
+    -X 'github.com/steadybit/extension-kit/extbuild.Version=${VERSION}' \
+    -X 'github.com/steadybit/extension-kit/extbuild.Revision=${REVISION}'" \
+    -o ./extension
 
 ##
 ## Runtime
@@ -34,7 +34,7 @@ ENV LC_ALL="en_US.UTF-8" LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" ALPINE_NODE_R
 RUN npm install -g newman@5.3.2 newman-reporter-json-summary@1.0.14 newman-reporter-htmlextra@1.22.11
 
 ARG USERNAME=steadybit
-ARG USER_UID=10000
+ARG USER_UID=1000
 
 RUN adduser -u $USER_UID -D $USERNAME
 

@@ -26,7 +26,7 @@ type PostmanAction struct {
 type PostmanState struct {
 	Command         []string `json:"command"`
 	Pid             int      `json:"pid"`
-	CmdStateId      string   `json:"cmdStateId"`
+	CmdStateID      string   `json:"cmdStateId"`
 	Timestamp       string   `json:"timestamp"`
 	StdOutLineCount int      `json:"stdOutLineCount"`
 }
@@ -148,40 +148,40 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, request a
 		fmt.Sprintf("https://api.getpostman.com/collections/%s?apikey=%s", request.Config["collectionId"], request.Config["apiKey"]),
 	}
 	if request.Config["environmentId"] != "" {
-		state.Command = append(state.Command, fmt.Sprintf("--environment"))
+		state.Command = append(state.Command, "--environment")
 		state.Command = append(state.Command, fmt.Sprintf("https://api.getpostman.com/environments/%s?apikey=%s", request.Config["environmentId"], request.Config["apiKey"]))
 	}
 	if request.Config["environment"] != nil {
 		for _, value := range request.Config["environment"].([]map[string]string) {
-			state.Command = append(state.Command, fmt.Sprintf("-env-var"))
+			state.Command = append(state.Command, "-env-var")
 			state.Command = append(state.Command, fmt.Sprintf("%s=%s", value["key"], value["value"]))
 		}
 	}
 	if request.Config["verbose"] != nil {
-		state.Command = append(state.Command, fmt.Sprintf("--verbose"))
+		state.Command = append(state.Command, "--verbose")
 	}
 	if request.Config["bail"] != nil {
-		state.Command = append(state.Command, fmt.Sprintf("--bail"))
+		state.Command = append(state.Command, "--bail")
 	}
 	if request.Config["timeout"] != nil {
-		state.Command = append(state.Command, fmt.Sprintf("--timeout"))
+		state.Command = append(state.Command, "--timeout")
 		state.Command = append(state.Command, fmt.Sprintf("%d", request.Config["timeout"].(int)))
 	}
 	if request.Config["timeoutRequest"] != nil {
-		state.Command = append(state.Command, fmt.Sprintf("--timeout-request"))
+		state.Command = append(state.Command, "--timeout-request")
 		state.Command = append(state.Command, fmt.Sprintf("%d", request.Config["timeoutRequest"].(int)))
 	}
 
-	state.Command = append(state.Command, fmt.Sprintf("--reporters"))
-	state.Command = append(state.Command, fmt.Sprintf("cli,json-summary,htmlextra"))
-	state.Command = append(state.Command, fmt.Sprintf("--reporter-summary-json-export"))
+	state.Command = append(state.Command, "--reporters")
+	state.Command = append(state.Command, "cli,json-summary,htmlextra")
+	state.Command = append(state.Command, "--reporter-summary-json-export")
 	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result-summary_%s.json", state.Timestamp))
-	state.Command = append(state.Command, fmt.Sprintf("--reporter-htmlextra-export"))
+	state.Command = append(state.Command, "--reporter-htmlextra-export")
 	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result_%s.html", state.Timestamp))
-	state.Command = append(state.Command, fmt.Sprintf("--reporter-htmlextra-omitResponseBodies"))
+	state.Command = append(state.Command, "--reporter-htmlextra-omitResponseBodies")
 
 	if request.Config["iterations"] != nil && request.Config["iterations"].(int) > 1 {
-		state.Command = append(state.Command, fmt.Sprintf("-n"))
+		state.Command = append(state.Command, "-n")
 		state.Command = append(state.Command, fmt.Sprintf("%d", request.Config["iterations"].(int)))
 	}
 	return nil, nil
@@ -191,7 +191,7 @@ func (f PostmanAction) Start(_ context.Context, state *PostmanState) (*action_ki
 	log.Info().Msgf("Starting action with command: %s", strings.Join(state.Command, " "))
 	cmd := exec.Command(state.Command[0], state.Command[1:]...)
 	cmdState := extcmd.NewCmdState(cmd)
-	state.CmdStateId = cmdState.Id
+	state.CmdStateID = cmdState.Id
 	err := cmd.Start()
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to start command.", err))
@@ -213,7 +213,7 @@ func (f PostmanAction) Start(_ context.Context, state *PostmanState) (*action_ki
 func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_kit_api.StatusResult, error) {
 	log.Info().Msgf("Checking collection run status for %d\n", state.Pid)
 
-	cmdState, err := extcmd.GetCmdState(state.CmdStateId)
+	cmdState, err := extcmd.GetCmdState(state.CmdStateID)
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to find command state", err))
 	}
@@ -256,7 +256,7 @@ func getStdOutMessages(lines []string) []action_kit_api.Message {
 
 func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit_api.StopResult, error) {
 	var timestamp = state.Timestamp
-	cmdState, err := extcmd.GetCmdState(state.CmdStateId)
+	cmdState, err := extcmd.GetCmdState(state.CmdStateID)
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to find command state", err))
 	}
