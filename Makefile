@@ -53,7 +53,7 @@ run: tidy build
 ## container: build the container image
 .PHONY: container
 container:
-	docker build -t extension-scaffold:latest .
+	docker build -t extension-postman:latest .
 
 # ==================================================================================== #
 # EJECT
