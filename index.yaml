@@ -12,6 +12,35 @@ entries:
           url: https://hub.steadybit.com
     apiVersion: v2
     appVersion: latest
+    created: "2023-04-20T05:35:38.619946837Z"
+    dependencies:
+    - name: extensionlib
+      repository: https://steadybit.github.io/helm-charts
+      version: 1.1.0
+    description: Steadybit Postman extension Helm chart for Kubernetes.
+    digest: 00e6dff4528a792a13fdb92ecaec2d6a0a64bbf0e0f0cc3ecf9be09e5415f8d1
+    home: https://www.steadybit.com/
+    icon: https://steadybit-website-assets.s3.amazonaws.com/logo-symbol-transparent.png
+    maintainers:
+    - email: daniel.reuter@steadybit.com
+      name: reuda
+    name: steadybit-extension-postman
+    sources:
+    - https://github.com/steadybit/extension-postman
+    urls:
+    - https://github.com/steadybit/extension-postman/releases/download/steadybit-extension-postman-1.6.5/steadybit-extension-postman-1.6.5.tgz
+    version: 1.6.5
+  - annotations:
+      artifacthub.io/images: |
+        - name: logo
+          image: https://steadybit-website-assets.s3.amazonaws.com/logo-symbol-transparent.png
+      artifacthub.io/links: |-
+        - name: Steadybit website
+          url: https://www.steadybit.com
+        - name: Steadybit reliability hub
+          url: https://hub.steadybit.com
+    apiVersion: v2
+    appVersion: latest
     created: "2023-04-19T13:06:20.560759238Z"
     dependencies:
     - name: extensionlib
@@ -30,4 +59,4 @@ entries:
     urls:
     - https://github.com/steadybit/extension-postman/releases/download/steadybit-extension-postman-1.6.4/steadybit-extension-postman-1.6.4.tgz
     version: 1.6.4
-generated: "2023-04-19T13:06:20.560766338Z"
+generated: "2023-04-20T05:35:38.619958338Z"
