@@ -55,3 +55,4 @@ $ helm upgrade steadybit-extension-postman \
 
 Make sure to register the extension at the steadybit platform. Please refer to
 the [documentation](https://docs.steadybit.com/integrate-with-steadybit/extensions/extension-installation) for more information.
+
