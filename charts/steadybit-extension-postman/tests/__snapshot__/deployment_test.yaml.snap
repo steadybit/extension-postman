@@ -32,7 +32,7 @@ manifest should match snapshot with TLS:
                 httpGet:
                   path: /health/liveness
                   port: 8087
-              name: extension-postman
+              name: extension
               readinessProbe:
                 httpGet:
                   path: /health/readiness
@@ -89,7 +89,7 @@ manifest should match snapshot with mutual TLS:
                 httpGet:
                   path: /health/liveness
                   port: 8087
-              name: extension-postman
+              name: extension
               readinessProbe:
                 httpGet:
                   path: /health/readiness
@@ -147,7 +147,7 @@ manifest should match snapshot without TLS:
                 httpGet:
                   path: /health/liveness
                   port: 8087
-              name: extension-postman
+              name: extension
               readinessProbe:
                 httpGet:
                   path: /health/readiness
