@@ -4,17 +4,17 @@ manifest should match snapshot with TLS:
     kind: Deployment
     metadata:
       labels: null
-      name: RELEASE-NAME
+      name: RELEASE-NAME-steadybit-extension-postman
       namespace: NAMESPACE
     spec:
       replicas: 1
       selector:
         matchLabels:
-          app.kubernetes.io/name: RELEASE-NAME
+          app.kubernetes.io/name: steadybit-extension-postman
       template:
         metadata:
           labels:
-            app.kubernetes.io/name: RELEASE-NAME
+            app.kubernetes.io/name: steadybit-extension-postman
         spec:
           containers:
             - env:
@@ -32,7 +32,7 @@ manifest should match snapshot with TLS:
                 httpGet:
                   path: /health/liveness
                   port: 8087
-              name: RELEASE-NAME
+              name: extension-postman
               readinessProbe:
                 httpGet:
                   path: /health/readiness
@@ -59,17 +59,17 @@ manifest should match snapshot with mutual TLS:
     kind: Deployment
     metadata:
       labels: null
-      name: RELEASE-NAME
+      name: RELEASE-NAME-steadybit-extension-postman
       namespace: NAMESPACE
     spec:
       replicas: 1
       selector:
         matchLabels:
-          app.kubernetes.io/name: RELEASE-NAME
+          app.kubernetes.io/name: steadybit-extension-postman
       template:
         metadata:
           labels:
-            app.kubernetes.io/name: RELEASE-NAME
+            app.kubernetes.io/name: steadybit-extension-postman
         spec:
           containers:
             - env:
@@ -89,7 +89,7 @@ manifest should match snapshot with mutual TLS:
                 httpGet:
                   path: /health/liveness
                   port: 8087
-              name: RELEASE-NAME
+              name: extension-postman
               readinessProbe:
                 httpGet:
                   path: /health/readiness
@@ -123,17 +123,17 @@ manifest should match snapshot without TLS:
     kind: Deployment
     metadata:
       labels: null
-      name: RELEASE-NAME
+      name: RELEASE-NAME-steadybit-extension-postman
       namespace: NAMESPACE
     spec:
       replicas: 1
       selector:
         matchLabels:
-          app.kubernetes.io/name: RELEASE-NAME
+          app.kubernetes.io/name: steadybit-extension-postman
       template:
         metadata:
           labels:
-            app.kubernetes.io/name: RELEASE-NAME
+            app.kubernetes.io/name: steadybit-extension-postman
         spec:
           containers:
             - env:
@@ -147,7 +147,7 @@ manifest should match snapshot without TLS:
                 httpGet:
                   path: /health/liveness
                   port: 8087
-              name: RELEASE-NAME
+              name: extension-postman
               readinessProbe:
                 httpGet:
                   path: /health/readiness
