@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 image:
   # image.name -- The container image to use for the steadybit Postman extension.
-  name: steadybit/extension-postman
+  name: ghcr.io/steadybit/extension-postman
   # image.tag -- tag name of the extension-postman container image to use.
   # See https://hub.docker.com/r/steadybit/extension-postman for all tags.
   tag: latest

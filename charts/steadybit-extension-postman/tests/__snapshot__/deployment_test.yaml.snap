@@ -26,7 +26,7 @@ manifest should match snapshot with TLS:
                   value: /etc/extension/certificates/server-cert/tls.crt
                 - name: STEADYBIT_EXTENSION_TLS_SERVER_KEY
                   value: /etc/extension/certificates/server-cert/tls.key
-              image: steadybit/extension-postman:latest
+              image: ghcr.io/steadybit/extension-postman:latest
               imagePullPolicy: Always
               livenessProbe:
                 httpGet:
@@ -83,7 +83,7 @@ manifest should match snapshot with mutual TLS:
                   value: /etc/extension/certificates/server-cert/tls.key
                 - name: STEADYBIT_EXTENSION_TLS_CLIENT_CAS
                   value: /etc/extension/certificates/client-cert-a/tls.crt,/etc/extension/certificates/client-cert-a/tls.crt
-              image: steadybit/extension-postman:latest
+              image: ghcr.io/steadybit/extension-postman:latest
               imagePullPolicy: Always
               livenessProbe:
                 httpGet:
@@ -141,7 +141,7 @@ manifest should match snapshot without TLS:
                   value: INFO
                 - name: STEADYBIT_LOG_FORMAT
                   value: text
-              image: steadybit/extension-postman:latest
+              image: ghcr.io/steadybit/extension-postman:latest
               imagePullPolicy: Always
               livenessProbe:
                 httpGet:
