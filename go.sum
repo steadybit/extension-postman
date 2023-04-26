@@ -25,8 +25,8 @@ github.com/steadybit/action-kit/go/action_kit_api/v2 v2.5.1 h1:gW6IttJ33Tu/ynn2c
 github.com/steadybit/action-kit/go/action_kit_api/v2 v2.5.1/go.mod h1:4yGr/DzsHpw6elju1XHCeUsY/qoqNTcLY3ytgnNcMt8=
 github.com/steadybit/action-kit/go/action_kit_sdk v1.0.2 h1:pYpKm1BaRY296OH56oMXTfUQjEJLwE2e6ESxRoBuyME=
 github.com/steadybit/action-kit/go/action_kit_sdk v1.0.2/go.mod h1:mTMPHv8eCORj2cVHL3BMDEcUlU86A0mRyaCNsVi25AQ=
-github.com/steadybit/extension-kit v1.7.10 h1:9u/709e9dYkiZgEsTyEwfFhZUMGq/OsP1Zxdm8BNprQ=
-github.com/steadybit/extension-kit v1.7.10/go.mod h1:zC5Tw+wrJTx4xvOlsIY+MfMoRYoglj83vR15Xr3aP5c=
+github.com/steadybit/extension-kit v1.7.12 h1:e61q54Yy75aRNoubxGiwhotvcsHGiqrJcJGuQEmPI38=
+github.com/steadybit/extension-kit v1.7.12/go.mod h1:zC5Tw+wrJTx4xvOlsIY+MfMoRYoglj83vR15Xr3aP5c=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
