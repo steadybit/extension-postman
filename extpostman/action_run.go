@@ -12,6 +12,7 @@ import (
 	"github.com/steadybit/extension-kit"
 	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/extcmd"
+	"github.com/steadybit/extension-kit/extconversion"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/steadybit/extension-postman/utils"
 	"os"
@@ -29,6 +30,18 @@ type PostmanState struct {
 	CmdStateID      string   `json:"cmdStateId"`
 	Timestamp       string   `json:"timestamp"`
 	StdOutLineCount int      `json:"stdOutLineCount"`
+}
+
+type PostmanConfig struct {
+	CollectionId   string
+	ApiKey         string
+	EnvironmentId  string
+	Environment    []map[string]string
+	Verbose        bool
+	Bail           bool
+	Timeout        int
+	TimeoutRequest int
+	Iterations     int
 }
 
 func NewPostmanAction() action_kit_sdk.Action[PostmanState] {
@@ -141,35 +154,41 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 }
 
 func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, request action_kit_api.PrepareActionRequestBody) (*action_kit_api.PrepareResult, error) {
+	var config PostmanConfig
+	err := extconversion.Convert(request.Config, &config)
+	if err != nil {
+		return nil, err
+	}
+
 	state.Timestamp = time.Now().Format(time.RFC3339)
 	state.Command = []string{
 		"newman",
 		"run",
-		fmt.Sprintf("https://api.getpostman.com/collections/%s?apikey=%s", request.Config["collectionId"], request.Config["apiKey"]),
+		fmt.Sprintf("https://api.getpostman.com/collections/%s?apikey=%s", config.CollectionId, config.ApiKey),
 	}
-	if request.Config["environmentId"] != "" {
+	if config.EnvironmentId != "" {
 		state.Command = append(state.Command, "--environment")
-		state.Command = append(state.Command, fmt.Sprintf("https://api.getpostman.com/environments/%s?apikey=%s", request.Config["environmentId"], request.Config["apiKey"]))
+		state.Command = append(state.Command, fmt.Sprintf("https://api.getpostman.com/environments/%s?apikey=%s", config.EnvironmentId, config.ApiKey))
 	}
-	if request.Config["environment"] != nil {
-		for _, value := range request.Config["environment"].([]map[string]string) {
+	if config.Environment != nil {
+		for _, value := range config.Environment {
 			state.Command = append(state.Command, "-env-var")
 			state.Command = append(state.Command, fmt.Sprintf("%s=%s", value["key"], value["value"]))
 		}
 	}
-	if request.Config["verbose"] != nil {
+	if config.Verbose {
 		state.Command = append(state.Command, "--verbose")
 	}
-	if request.Config["bail"] != nil {
+	if config.Bail {
 		state.Command = append(state.Command, "--bail")
 	}
-	if request.Config["timeout"] != nil {
+	if config.Timeout > 0 {
 		state.Command = append(state.Command, "--timeout")
-		state.Command = append(state.Command, fmt.Sprintf("%d", request.Config["timeout"].(int)))
+		state.Command = append(state.Command, fmt.Sprintf("%d", config.Timeout))
 	}
-	if request.Config["timeoutRequest"] != nil {
+	if config.TimeoutRequest > 0 {
 		state.Command = append(state.Command, "--timeout-request")
-		state.Command = append(state.Command, fmt.Sprintf("%d", request.Config["timeoutRequest"].(int)))
+		state.Command = append(state.Command, fmt.Sprintf("%d", config.TimeoutRequest))
 	}
 
 	state.Command = append(state.Command, "--reporters")
@@ -180,9 +199,9 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, request a
 	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result_%s.html", state.Timestamp))
 	state.Command = append(state.Command, "--reporter-htmlextra-omitResponseBodies")
 
-	if request.Config["iterations"] != nil && request.Config["iterations"].(int) > 1 {
+	if config.Iterations > 1 {
 		state.Command = append(state.Command, "-n")
-		state.Command = append(state.Command, fmt.Sprintf("%d", request.Config["iterations"].(int)))
+		state.Command = append(state.Command, fmt.Sprintf("%d", config.Iterations))
 	}
 	return nil, nil
 }
