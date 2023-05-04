@@ -4,9 +4,6 @@
 
 A [Steadybit](https://www.steadybit.com/) extension to execute [Postman](https://www.postman.com/) collections via Postman Cloud Api.
 
-:warning: The Postman extension is currently bundled in the out-of-the-box version of steadybit. This code should help you to understand the usage
-of [Action kit](https://github.com/steadybit/action-kit).
-
 ## Prerequisites
 
 - A Postman account with a

@@ -13,8 +13,8 @@ import (
 	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/extcmd"
 	"github.com/steadybit/extension-kit/extconversion"
+	"github.com/steadybit/extension-kit/extfile"
 	"github.com/steadybit/extension-kit/extutil"
-	"github.com/steadybit/extension-postman/utils"
 	"os"
 	"os/exec"
 	"strings"
@@ -155,9 +155,8 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 
 func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, request action_kit_api.PrepareActionRequestBody) (*action_kit_api.PrepareResult, error) {
 	var config PostmanConfig
-	err := extconversion.Convert(request.Config, &config)
-	if err != nil {
-		return nil, err
+	if err := extconversion.Convert(request.Config, &config); err != nil {
+		return nil, extension_kit.ToError("Failed to unmarshal the config.", err)
 	}
 
 	state.Timestamp = time.Now().Format(time.RFC3339)
@@ -310,7 +309,7 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 	_, err = os.Stat(fmt.Sprintf(ResultSummaryFileName, timestamp))
 
 	if err == nil { // file exists
-		summaryFileContent, err = utils.File2Base64(fmt.Sprintf(ResultSummaryFileName, timestamp))
+		summaryFileContent, err = extfile.File2Base64(fmt.Sprintf(ResultSummaryFileName, timestamp))
 		if err != nil {
 			return nil, extutil.Ptr(extension_kit.ToError("Failed to open summaryFileContent file", err))
 		}
@@ -325,7 +324,7 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 	_, err = os.Stat(fmt.Sprintf(ResultFileName, timestamp))
 
 	if err == nil { // file exists
-		htmlResultFileContent, err = utils.File2Base64(fmt.Sprintf(ResultFileName, timestamp))
+		htmlResultFileContent, err = extfile.File2Base64(fmt.Sprintf(ResultFileName, timestamp))
 		if err != nil {
 			return nil, extutil.Ptr(extension_kit.ToError("Failed to open htmlResultFileContent file", err))
 		}
