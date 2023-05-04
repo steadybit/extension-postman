@@ -278,6 +278,7 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 	if err != nil {
 		return nil, extutil.Ptr(extension_kit.ToError("Failed to find command state", err))
 	}
+	extcmd.RemoveCmdState(state.CmdStateID)
 
 	// kill postman if it is still running
 	var pid = state.Pid
