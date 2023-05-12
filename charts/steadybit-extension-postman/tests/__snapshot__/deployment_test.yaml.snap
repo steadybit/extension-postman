@@ -44,6 +44,11 @@ manifest should match snapshot with TLS:
                 requests:
                   cpu: 50m
                   memory: 64Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsGroup: 10000
+                runAsNonRoot: true
+                runAsUser: 10000
               volumeMounts:
                 - mountPath: /etc/extension/certificates/server-cert
                   name: certificate-server-cert
@@ -53,6 +58,62 @@ manifest should match snapshot with TLS:
               secret:
                 optional: false
                 secretName: server-cert
+manifest should match snapshot with extra env vars:
+  1: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels: null
+      name: RELEASE-NAME-steadybit-extension-postman
+      namespace: NAMESPACE
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: steadybit-extension-postman
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: steadybit-extension-postman
+        spec:
+          containers:
+            - env:
+                - name: STEADYBIT_LOG_LEVEL
+                  value: INFO
+                - name: STEADYBIT_LOG_FORMAT
+                  value: text
+                - name: FOO
+                  value: bar
+              envFrom:
+                - configMapRef: null
+                  name: env-configmap
+                - name: env-secrets
+                  secretRef: null
+              image: ghcr.io/steadybit/extension-postman:latest
+              imagePullPolicy: Always
+              livenessProbe:
+                httpGet:
+                  path: /health/liveness
+                  port: 8087
+              name: extension
+              readinessProbe:
+                httpGet:
+                  path: /health/readiness
+                  port: 8087
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsGroup: 10000
+                runAsNonRoot: true
+                runAsUser: 10000
+              volumeMounts: null
+          volumes: null
 manifest should match snapshot with mutual TLS:
   1: |
     apiVersion: apps/v1
@@ -101,6 +162,11 @@ manifest should match snapshot with mutual TLS:
                 requests:
                   cpu: 50m
                   memory: 64Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsGroup: 10000
+                runAsNonRoot: true
+                runAsUser: 10000
               volumeMounts:
                 - mountPath: /etc/extension/certificates/client-cert-a
                   name: certificate-client-cert-a
@@ -159,5 +225,10 @@ manifest should match snapshot without TLS:
                 requests:
                   cpu: 50m
                   memory: 64Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+                runAsGroup: 10000
+                runAsNonRoot: true
+                runAsUser: 10000
               volumeMounts: null
           volumes: null
