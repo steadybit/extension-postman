@@ -50,10 +50,14 @@ manifest should match snapshot with TLS:
                 runAsNonRoot: true
                 runAsUser: 10000
               volumeMounts:
+                - mountPath: /tmp
+                  name: tmp-dir
                 - mountPath: /etc/extension/certificates/server-cert
                   name: certificate-server-cert
                   readOnly: true
           volumes:
+            - emptyDir: {}
+              name: tmp-dir
             - name: certificate-server-cert
               secret:
                 optional: false
@@ -112,8 +116,12 @@ manifest should match snapshot with extra env vars:
                 runAsGroup: 10000
                 runAsNonRoot: true
                 runAsUser: 10000
-              volumeMounts: null
-          volumes: null
+              volumeMounts:
+                - mountPath: /tmp
+                  name: tmp-dir
+          volumes:
+            - emptyDir: {}
+              name: tmp-dir
 manifest should match snapshot with mutual TLS:
   1: |
     apiVersion: apps/v1
@@ -168,6 +176,8 @@ manifest should match snapshot with mutual TLS:
                 runAsNonRoot: true
                 runAsUser: 10000
               volumeMounts:
+                - mountPath: /tmp
+                  name: tmp-dir
                 - mountPath: /etc/extension/certificates/client-cert-a
                   name: certificate-client-cert-a
                   readOnly: true
@@ -175,6 +185,8 @@ manifest should match snapshot with mutual TLS:
                   name: certificate-server-cert
                   readOnly: true
           volumes:
+            - emptyDir: {}
+              name: tmp-dir
             - name: certificate-client-cert-a
               secret:
                 optional: false
@@ -230,5 +242,9 @@ manifest should match snapshot without TLS:
                 runAsGroup: 10000
                 runAsNonRoot: true
                 runAsUser: 10000
-              volumeMounts: null
-          volumes: null
+              volumeMounts:
+                - mountPath: /tmp
+                  name: tmp-dir
+          volumes:
+            - emptyDir: {}
+              name: tmp-dir

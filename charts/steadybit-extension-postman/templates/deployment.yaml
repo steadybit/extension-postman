@@ -38,6 +38,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
+            - name: tmp-dir
+              mountPath: /tmp
             {{- include "extensionlib.deployment.volumeMounts" (list .) | nindent 12 }}
           livenessProbe:
             httpGet:
@@ -53,6 +55,8 @@ spec:
             runAsUser: 10000
             runAsGroup: 10000
       volumes:
+        - name: tmp-dir
+          emptyDir: { }
         {{- include "extensionlib.deployment.volumes" (list .) | nindent 8 }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
