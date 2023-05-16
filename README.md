@@ -4,6 +4,8 @@
 
 A [Steadybit](https://www.steadybit.com/) extension to execute [Postman](https://www.postman.com/) collections via Postman Cloud Api.
 
+Learn about the capabilities of this extension in our [Reliability Hub](https://hub.steadybit.com/extension/com.github.steadybit.extension_postman).
+
 ## Prerequisites
 
 - A Postman account with a
@@ -14,7 +16,7 @@ A [Steadybit](https://www.steadybit.com/) extension to execute [Postman](https:/
 
 The extension supports all environment variables provided by [steadybit/extension-kit](https://github.com/steadybit/extension-kit#environment-variables).
 
-## Running the Extension
+## Installation
 
 ### Using Docker
 
