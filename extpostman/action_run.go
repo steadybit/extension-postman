@@ -202,11 +202,12 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, request a
 		state.Command = append(state.Command, "-n")
 		state.Command = append(state.Command, fmt.Sprintf("%d", config.Iterations))
 	}
+	log.Info().Msgf("Prepared action. Command: %s", extutil.MaskString(strings.Join(state.Command, " "), config.ApiKey, 4))
 	return nil, nil
 }
 
 func (f PostmanAction) Start(_ context.Context, state *PostmanState) (*action_kit_api.StartResult, error) {
-	log.Info().Msgf("Starting action with command: %s", strings.Join(state.Command, " "))
+	log.Info().Msgf("Starting newman!")
 	cmd := exec.Command(state.Command[0], state.Command[1:]...)
 	cmdState := extcmd.NewCmdState(cmd)
 	state.CmdStateID = cmdState.Id
