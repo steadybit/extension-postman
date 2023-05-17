@@ -46,7 +46,7 @@ func TestPrepareCollectionRun(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Nil(t, result)
 	assert.Equal(t, "newman", state.Command[0])
-	assert.Equal(t, []string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/env1?apikey=123456", "-env-var", "Test1=foo", "-env-var", "Test2=bar", "--bail", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "--reporter-htmlextra-export", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}, utils.RemoveAtIndex(utils.RemoveAtIndex(state.Command, 17), 18))
+	assert.Equal(t, []string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/env1?apikey=123456", "--env-var", "Test1=foo", "--env-var", "Test2=bar", "--bail", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "--reporter-htmlextra-export", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}, utils.RemoveAtIndex(utils.RemoveAtIndex(state.Command, 17), 18))
 }
 
 func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {

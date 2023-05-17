@@ -171,7 +171,7 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, request a
 	}
 	if config.Environment != nil {
 		for _, value := range config.Environment {
-			state.Command = append(state.Command, "-env-var")
+			state.Command = append(state.Command, "--env-var")
 			state.Command = append(state.Command, fmt.Sprintf("%s=%s", value["key"], value["value"]))
 		}
 	}
