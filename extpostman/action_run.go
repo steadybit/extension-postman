@@ -294,7 +294,7 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 
 	// read return code and send it as Message
 	exitCode := cmdState.Cmd.ProcessState.ExitCode()
-	if exitCode != 0 {
+	if exitCode != 0 && exitCode != -1 {
 		messages = append(messages, action_kit_api.Message{
 			Level:   extutil.Ptr(action_kit_api.Error),
 			Message: fmt.Sprintf("Postman run failed with exit code %d", exitCode),
