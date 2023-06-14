@@ -21,8 +21,8 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/rs/xid v1.4.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
 github.com/rs/zerolog v1.29.1 h1:cO+d60CHkknCbvzEWxP0S9K6KqyTjrCNUy1LdQLCGPc=
 github.com/rs/zerolog v1.29.1/go.mod h1:Le6ESbR7hc+DP6Lt1THiV8CQSdkkNrd3R0XbEgp3ZBU=
-github.com/steadybit/action-kit/go/action_kit_api/v2 v2.6.0 h1:Btl83NzcJyjdGElESddwgQaF3ksndmL7tP5KFbBXjWw=
-github.com/steadybit/action-kit/go/action_kit_api/v2 v2.6.0/go.mod h1:ZF094T/qu+po7BBm7peXedds6Fr5/cfioBNCUqCV07Y=
+github.com/steadybit/action-kit/go/action_kit_api/v2 v2.6.1 h1:+2hNanjQhyPEW3R6olpoMr/kmiop5f6U/lSZeIqEfjI=
+github.com/steadybit/action-kit/go/action_kit_api/v2 v2.6.1/go.mod h1:ZF094T/qu+po7BBm7peXedds6Fr5/cfioBNCUqCV07Y=
 github.com/steadybit/action-kit/go/action_kit_sdk v1.1.2 h1:I4+XRJuItskcrDnuCL/jMOQXZg/3DgEyrQqpQXYNYIs=
 github.com/steadybit/action-kit/go/action_kit_sdk v1.1.2/go.mod h1:fRKc0RTkFljjzGA20kfinw0f1hDScWVpJM7KONmdl50=
 github.com/steadybit/extension-kit v1.7.18 h1:DV7kisvnvelY5QxO62i9z5/3KpwIQck/SUqsK9NkfAw=
