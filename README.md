@@ -21,7 +21,7 @@ The extension supports all environment variables provided by [steadybit/extensio
 ### Using Docker
 
 ```sh
-$ docker run \
+docker run \
   --rm \
   -p 8085 \
   --name steadybit-extension-postman \
@@ -31,9 +31,9 @@ $ docker run \
 ### Using Helm in Kubernetes
 
 ```sh
-$ helm repo add steadybit-extension-postman https://steadybit.github.io/extension-postman
-$ helm repo update
-$ helm upgrade steadybit-extension-postman \
+helm repo add steadybit-extension-postman https://steadybit.github.io/extension-postman
+helm repo update
+helm upgrade steadybit-extension-postman \
     --install \
     --wait \
     --timeout 5m0s \
