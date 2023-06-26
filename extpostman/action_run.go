@@ -5,6 +5,7 @@ package extpostman
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
@@ -249,9 +250,33 @@ func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_k
 		result.Completed = true
 	} else {
 		result.Error = &action_kit_api.ActionKitError{
-			Status: extutil.Ptr(action_kit_api.Failed),
+			Status: extutil.Ptr(action_kit_api.Errored),
 			Title:  fmt.Sprintf("Postman run failed, exit-code %d", exitCode),
 		}
+
+		// check if summary file and try to check if it is a failure
+		resultSummaryFileName := fmt.Sprintf("/tmp/newman-result-summary_%s.json", state.Timestamp)
+		_, err = os.Stat(resultSummaryFileName)
+		if err == nil { // file exists
+			byteValue, _ := os.ReadFile(resultSummaryFileName)
+			var report NewmanJsonReport
+			jsonErr := json.Unmarshal(byteValue, &report)
+			if jsonErr != nil {
+				return nil, extutil.Ptr(extension_kit.ToError("Failed to parse report json", err))
+			}
+			if report.Run.Stats.Assertions != nil && report.Run.Stats.Assertions.Failed > 0 {
+				result.Error = &action_kit_api.ActionKitError{
+					Status: extutil.Ptr(action_kit_api.Failed),
+					Title:  fmt.Sprintf("%d assertions failed", report.Run.Stats.Assertions.Failed),
+				}
+			} else if report.Run.Stats.Requests != nil && report.Run.Stats.Requests.Failed > 0 {
+				result.Error = &action_kit_api.ActionKitError{
+					Status: extutil.Ptr(action_kit_api.Failed),
+					Title:  fmt.Sprintf("%d requests failed", report.Run.Stats.Requests.Failed),
+				}
+			}
+		}
+
 		result.Completed = true
 	}
 

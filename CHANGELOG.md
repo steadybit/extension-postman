@@ -1,6 +1,10 @@
 # Changelog
 
-## v1.5.0.
+## v1.5.1
+
+ - Fail on assertion and request failures, error out on other errors
+
+## v1.5.0
 
  - Update dependencies
  - Refactored to use action-kit-sdk
