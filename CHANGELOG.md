@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.5.2
+
+- update dependencies
+
 ## v1.5.1
 
  - Fail on assertion and request failures, error out on other errors
