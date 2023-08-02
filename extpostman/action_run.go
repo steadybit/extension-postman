@@ -60,7 +60,7 @@ func (f PostmanAction) NewEmptyState() PostmanState {
 
 func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 	return action_kit_api.ActionDescription{
-		Id:          "com.github.steadybit.extension_postman.collection.run",
+		Id:          "com.steadybit.extension_postman.collection.run",
 		Label:       "Postman",
 		Description: "Integrate a Postman Collection via Postman Cloud API.",
 		Version:     extbuild.GetSemverVersionStringOrUnknown(),
