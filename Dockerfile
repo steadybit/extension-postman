@@ -29,6 +29,8 @@ RUN go build \
 ##
 FROM node:16-alpine
 
+LABEL "steadybit.com.discovery-enabled"="false"
+
 ENV LC_ALL="en_US.UTF-8" LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" ALPINE_NODE_REPO="oznu/alpine-node"
 
 RUN npm install -g --ignore-scripts newman@5.3.2 newman-reporter-json-summary@1.0.14 newman-reporter-htmlextra@1.22.11
