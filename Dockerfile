@@ -29,7 +29,7 @@ RUN go build \
 ##
 FROM node:16-alpine
 
-LABEL "steadybit.com.discovery-enabled"="false"
+LABEL "steadybit.com.discovery-disabled"="true"
 
 ENV LC_ALL="en_US.UTF-8" LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" ALPINE_NODE_REPO="oznu/alpine-node"
 
