@@ -66,7 +66,7 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 		Version:     extbuild.GetSemverVersionStringOrUnknown(),
 		Kind:        action_kit_api.Check,
 		Icon:        extutil.Ptr(icon),
-		TimeControl: action_kit_api.Internal,
+		TimeControl: action_kit_api.TimeControlInternal,
 		Parameters: []action_kit_api.ActionParameter{
 			{
 				Name:         "duration",
