@@ -53,6 +53,7 @@ manifest should match snapshot using podAnnotations and Labels:
               volumeMounts:
                 - mountPath: /tmp
                   name: tmp-dir
+          serviceAccountName: steadybit-extension-postman
           volumes:
             - emptyDir: {}
               name: tmp-dir
@@ -116,6 +117,7 @@ manifest should match snapshot with TLS:
                 - mountPath: /etc/extension/certificates/server-cert
                   name: certificate-server-cert
                   readOnly: true
+          serviceAccountName: steadybit-extension-postman
           volumes:
             - emptyDir: {}
               name: tmp-dir
@@ -183,6 +185,7 @@ manifest should match snapshot with extra env vars:
               volumeMounts:
                 - mountPath: /tmp
                   name: tmp-dir
+          serviceAccountName: steadybit-extension-postman
           volumes:
             - emptyDir: {}
               name: tmp-dir
@@ -241,6 +244,7 @@ manifest should match snapshot with extra labels:
               volumeMounts:
                 - mountPath: /tmp
                   name: tmp-dir
+          serviceAccountName: steadybit-extension-postman
           volumes:
             - emptyDir: {}
               name: tmp-dir
@@ -309,6 +313,7 @@ manifest should match snapshot with mutual TLS:
                 - mountPath: /etc/extension/certificates/server-cert
                   name: certificate-server-cert
                   readOnly: true
+          serviceAccountName: steadybit-extension-postman
           volumes:
             - emptyDir: {}
               name: tmp-dir
@@ -379,6 +384,7 @@ manifest should match snapshot with mutual TLS using containerPaths:
               volumeMounts:
                 - mountPath: /tmp
                   name: tmp-dir
+          serviceAccountName: steadybit-extension-postman
           volumes:
             - emptyDir: {}
               name: tmp-dir
@@ -435,6 +441,7 @@ manifest should match snapshot without TLS:
               volumeMounts:
                 - mountPath: /tmp
                   name: tmp-dir
+          serviceAccountName: steadybit-extension-postman
           volumes:
             - emptyDir: {}
               name: tmp-dir
