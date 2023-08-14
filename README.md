@@ -17,9 +17,9 @@ Learn about the capabilities of this extension in our [Reliability Hub](https://
 
 ## Configuration
 
-| Environment Variable                  | Helm value               | Meaning                                                                                            | Required | Default |
-|---------------------------------------|--------------------------|----------------------------------------------------------------------------------------------------|----------|---------|
-| `HTTPS_PROXY`                         | via extraEnv variables   | Configure the proxy to be used for Datadog communication.                                          | no       |         |
+| Environment Variable                  | Helm value               | Meaning                                                   | Required | Default |
+|---------------------------------------|--------------------------|-----------------------------------------------------------|----------|---------|
+| `HTTPS_PROXY`                         | via extraEnv variables   | Configure the proxy to be used for Postman communication. | no       |         |
 
 The extension supports all environment variables provided by [steadybit/extension-kit](https://github.com/steadybit/extension-kit#environment-variables).
 
@@ -55,7 +55,7 @@ Make sure to register the extension at the steadybit platform. Please refer to
 the [documentation](https://docs.steadybit.com/integrate-with-steadybit/extensions/extension-installation) for more information.
 
 ## Proxy
-To communicate to Datadog via a proxy, we need the environment variable `https_proxy` to be set.
+To communicate to Postman via a proxy, we need the environment variable `https_proxy` to be set.
 This can be set via helm using the extraEnv variable
 
 ```bash
