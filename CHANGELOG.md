@@ -1,5 +1,11 @@
 # Changelog
 
+
+## v1.5.4
+
+- update dependencies
+- added https_proxy support documentation
+
 ## v1.5.3
 
 - migration to new unified steadybit actionIds and targetTypes
