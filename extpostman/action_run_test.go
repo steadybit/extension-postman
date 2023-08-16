@@ -20,7 +20,7 @@ func TestPrepareCollectionRun(t *testing.T) {
 	// Given
 	requestBody := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]interface{}{
-			"duration":      "60s",
+			"duration":      60000,
 			"apiKey":        "123456",
 			"collectionId":  "645797",
 			"environmentId": "env1",
@@ -53,7 +53,7 @@ func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
 	// Given
 	requestBody := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]interface{}{
-			"duration":       "60s",
+			"duration":       60000,
 			"apiKey":         "123456",
 			"collectionId":   "645797",
 			"environmentId":  "env1",
