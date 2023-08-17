@@ -66,6 +66,10 @@ spec:
             runAsNonRoot: true
             runAsUser: 10000
             runAsGroup: 10000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: tmp-dir
           emptyDir: { }
