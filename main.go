@@ -4,17 +4,20 @@
 package main
 
 import (
+	"github.com/rs/zerolog"
 	"github.com/steadybit/action-kit/go/action_kit_sdk"
 	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/exthealth"
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extlogging"
+	"github.com/steadybit/extension-kit/extruntime"
 	"github.com/steadybit/extension-postman/extpostman"
 )
 
 func main() {
 	extlogging.InitZeroLog()
 	extbuild.PrintBuildInformation()
+	extruntime.LogRuntimeInformation(zerolog.DebugLevel)
 	exthealth.StartProbes(8087)
 
 	action_kit_sdk.RegisterAction(extpostman.NewPostmanAction())
