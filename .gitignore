@@ -1,3 +1,4 @@
 extension-postman
 *.iml
 /vendor
+coverage.out
