@@ -11,15 +11,19 @@ import (
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extlogging"
 	"github.com/steadybit/extension-kit/extruntime"
+	"github.com/steadybit/extension-postman/config"
 	"github.com/steadybit/extension-postman/extpostman"
 )
 
 func main() {
+	config.ParseConfiguration()
+
 	extlogging.InitZeroLog()
 	extbuild.PrintBuildInformation()
 	extruntime.LogRuntimeInformation(zerolog.DebugLevel)
 	exthealth.StartProbes(8087)
 
+	action_kit_sdk.RegisterCoverageEndpoints()
 	action_kit_sdk.RegisterAction(extpostman.NewPostmanAction())
 	action_kit_sdk.InstallSignalHandler()
 

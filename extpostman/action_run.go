@@ -16,6 +16,7 @@ import (
 	"github.com/steadybit/extension-kit/extconversion"
 	"github.com/steadybit/extension-kit/extfile"
 	"github.com/steadybit/extension-kit/extutil"
+	"github.com/steadybit/extension-postman/config"
 	"os"
 	"os/exec"
 	"strings"
@@ -154,41 +155,42 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 	}
 }
 
-func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, request action_kit_api.PrepareActionRequestBody) (*action_kit_api.PrepareResult, error) {
-	var config PostmanConfig
-	if err := extconversion.Convert(request.Config, &config); err != nil {
+func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw action_kit_api.PrepareActionRequestBody) (*action_kit_api.PrepareResult, error) {
+	var request PostmanConfig
+	if err := extconversion.Convert(raw.Config, &request); err != nil {
 		return nil, extension_kit.ToError("Failed to unmarshal the config.", err)
 	}
+	config := config.Config
 
 	state.Timestamp = time.Now().Format(time.RFC3339)
 	state.Command = []string{
 		"newman",
 		"run",
-		fmt.Sprintf("https://api.getpostman.com/collections/%s?apikey=%s", config.CollectionId, config.ApiKey),
+		fmt.Sprintf("%s/collections/%s?apikey=%s", config.PostmanBaseUrl, request.CollectionId, request.ApiKey),
 	}
-	if config.EnvironmentId != "" {
+	if request.EnvironmentId != "" {
 		state.Command = append(state.Command, "--environment")
-		state.Command = append(state.Command, fmt.Sprintf("https://api.getpostman.com/environments/%s?apikey=%s", config.EnvironmentId, config.ApiKey))
+		state.Command = append(state.Command, fmt.Sprintf("%s/environments/%s?apikey=%s", config.PostmanBaseUrl, request.EnvironmentId, request.ApiKey))
 	}
-	if config.Environment != nil {
-		for _, value := range config.Environment {
+	if request.Environment != nil {
+		for _, value := range request.Environment {
 			state.Command = append(state.Command, "--env-var")
 			state.Command = append(state.Command, fmt.Sprintf("%s=%s", value["key"], value["value"]))
 		}
 	}
-	if config.Verbose {
+	if request.Verbose {
 		state.Command = append(state.Command, "--verbose")
 	}
-	if config.Bail {
+	if request.Bail {
 		state.Command = append(state.Command, "--bail")
 	}
-	if config.Timeout > 0 {
+	if request.Timeout > 0 {
 		state.Command = append(state.Command, "--timeout")
-		state.Command = append(state.Command, fmt.Sprintf("%d", config.Timeout))
+		state.Command = append(state.Command, fmt.Sprintf("%d", request.Timeout))
 	}
-	if config.TimeoutRequest > 0 {
+	if request.TimeoutRequest > 0 {
 		state.Command = append(state.Command, "--timeout-request")
-		state.Command = append(state.Command, fmt.Sprintf("%d", config.TimeoutRequest))
+		state.Command = append(state.Command, fmt.Sprintf("%d", request.TimeoutRequest))
 	}
 
 	state.Command = append(state.Command, "--reporters")
@@ -199,11 +201,11 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, request a
 	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result_%s.html", state.Timestamp))
 	state.Command = append(state.Command, "--reporter-htmlextra-omitResponseBodies")
 
-	if config.Iterations > 1 {
+	if request.Iterations > 1 {
 		state.Command = append(state.Command, "-n")
-		state.Command = append(state.Command, fmt.Sprintf("%d", config.Iterations))
+		state.Command = append(state.Command, fmt.Sprintf("%d", request.Iterations))
 	}
-	log.Info().Msgf("Prepared action. Command: %s", extutil.MaskString(strings.Join(state.Command, " "), config.ApiKey, 4))
+	log.Info().Msgf("Prepared action. Command: %s", extutil.MaskString(strings.Join(state.Command, " "), request.ApiKey, 4))
 	return nil, nil
 }
 
@@ -288,7 +290,7 @@ func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_k
 }
 
 func getStdOutMessages(lines []string) []action_kit_api.Message {
-	var messages []action_kit_api.Message
+	messages := make([]action_kit_api.Message, 0)
 	for _, line := range lines {
 		messages = append(messages, action_kit_api.Message{
 			Level:   extutil.Ptr(action_kit_api.Info),
@@ -329,7 +331,7 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 	var summaryFileContent string
 	var htmlResultFileContent string
 
-	var artifacts []action_kit_api.Artifact
+	artifacts := make([]action_kit_api.Artifact, 0)
 
 	// check if summary file exists and send it as artifact
 	const ResultSummaryFileName = "/tmp/newman-result-summary_%s.json"
