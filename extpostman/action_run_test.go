@@ -11,12 +11,14 @@ import (
 	"context"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/extension-kit/extutil"
+	"github.com/steadybit/extension-postman/config"
 	"github.com/steadybit/extension-postman/utils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestPrepareCollectionRun(t *testing.T) {
+	config.ParseConfiguration()
 	// Given
 	requestBody := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]interface{}{
@@ -50,6 +52,7 @@ func TestPrepareCollectionRun(t *testing.T) {
 }
 
 func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
+	config.ParseConfiguration()
 	// Given
 	requestBody := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]interface{}{
