@@ -13,6 +13,7 @@ import (
 	"github.com/steadybit/extension-kit/extruntime"
 	"github.com/steadybit/extension-postman/config"
 	"github.com/steadybit/extension-postman/extpostman"
+	_ "net/http/pprof" //allow pprof
 )
 
 func main() {
