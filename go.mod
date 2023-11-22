@@ -8,7 +8,7 @@ require (
 	github.com/steadybit/action-kit/go/action_kit_api/v2 v2.8.0
 	github.com/steadybit/action-kit/go/action_kit_sdk v1.1.8
 	github.com/steadybit/action-kit/go/action_kit_test v1.2.1
-	github.com/steadybit/extension-kit v1.8.10
+	github.com/steadybit/extension-kit v1.8.11
 	github.com/stretchr/testify v1.8.4
 )
 
