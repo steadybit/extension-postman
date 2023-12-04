@@ -7,7 +7,7 @@ require (
 	github.com/rs/zerolog v1.31.0
 	github.com/steadybit/action-kit/go/action_kit_api/v2 v2.8.0
 	github.com/steadybit/action-kit/go/action_kit_sdk v1.1.8
-	github.com/steadybit/action-kit/go/action_kit_test v1.2.4
+	github.com/steadybit/action-kit/go/action_kit_test v1.2.6
 	github.com/steadybit/extension-kit v1.8.11
 	github.com/stretchr/testify v1.8.4
 )
