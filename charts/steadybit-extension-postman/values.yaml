@@ -113,3 +113,8 @@ extraEnv: []
 #  - secretRef:
 #    name: env-secrets
 extraEnvFrom: []
+
+postman:
+  apiKey: ""
+  # postman.existingSecret -- If defined, will skip secret creation and instead assume that the referenced secret contains the apiKey
+  existingSecret: null

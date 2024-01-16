@@ -5,6 +5,7 @@ package e2e
 
 import (
 	"fmt"
+	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/action-kit/go/action_kit_test/e2e"
 	"github.com/steadybit/extension-kit/extlogging"
 	"github.com/stretchr/testify/require"
@@ -26,6 +27,7 @@ func TestWithMinikube(t *testing.T) {
 		ExtraArgs: func(m *e2e.Minikube) []string {
 			return []string{
 				"--set", "logging.level=debug",
+				"--set", "STEADYBIT_EXTENSION_POSTMAN_API_KEY=testApiKey",
 				"--set", "extraEnv[0].name=STEADYBIT_EXTENSION_POSTMAN_BASE_URL",
 				"--set", fmt.Sprintf("extraEnv[0].value=%s:%s", "http://host.minikube.internal:", port),
 			}
@@ -42,14 +44,17 @@ func TestWithMinikube(t *testing.T) {
 
 func testRunPostman(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
 	config := struct {
-		CollectionId string
-		ApiKey       string
 	}{
-		CollectionId: "testCollectionId",
-		ApiKey:       "testApiKey",
 	}
 
-	exec, err := e.RunAction("com.steadybit.extension_postman.collection.run", nil, config, nil)
+	collectionId := "5f757f0d-de24-462c-867f-256bb696d2dd"
+	target := action_kit_api.Target{
+		Attributes: map[string][]string{
+			"postman.collection.id": {collectionId},
+		},
+	}
+
+	exec, err := e.RunAction("com.steadybit.extension_postman.collection.run.v2", &target, config, nil)
 	require.NoError(t, err)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 90*time.Second)
