@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+const collectionId = "5f757f0d-de24-462c-867f-256bb696d2dd"
 func createMockPostmanServer() *httptest.Server {
 	listener, err := net.Listen("tcp", "0.0.0.0:0")
 	if err != nil {
@@ -18,7 +19,7 @@ func createMockPostmanServer() *httptest.Server {
 		Listener: listener,
 		Config: &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			log.Info().Str("path", r.URL.Path).Str("method", r.Method).Str("query", r.URL.RawQuery).Msg("Request received")
-			if strings.Contains(r.URL.Path, "collections/testCollectionId") {
+			if strings.Contains(r.URL.Path, "collections/" + collectionId) {
 				w.WriteHeader(http.StatusOK)
 				w.Write(getCollection())
 			} else {

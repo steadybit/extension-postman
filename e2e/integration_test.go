@@ -27,7 +27,7 @@ func TestWithMinikube(t *testing.T) {
 		ExtraArgs: func(m *e2e.Minikube) []string {
 			return []string{
 				"--set", "logging.level=debug",
-				"--set", "STEADYBIT_EXTENSION_POSTMAN_API_KEY=testApiKey",
+				"--set", "postman.apiKey=testApiKey",
 				"--set", "extraEnv[0].name=STEADYBIT_EXTENSION_POSTMAN_BASE_URL",
 				"--set", fmt.Sprintf("extraEnv[0].value=%s:%s", "http://host.minikube.internal:", port),
 			}
@@ -47,7 +47,6 @@ func testRunPostman(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
 	}{
 	}
 
-	collectionId := "5f757f0d-de24-462c-867f-256bb696d2dd"
 	target := action_kit_api.Target{
 		Attributes: map[string][]string{
 			"postman.collection.id": {collectionId},
