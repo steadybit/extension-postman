@@ -38,7 +38,6 @@ func main() {
 	})
 }
 
-
 // ExtensionListResponse exists to merge the possible root path responses supported by the
 // various extension kits. In this case, the response for ActionKit, DiscoveryKit and EventKit.
 type ExtensionListResponse struct {

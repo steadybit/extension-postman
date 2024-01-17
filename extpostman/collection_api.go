@@ -13,9 +13,10 @@ type PostmanCollectionResult struct {
 	Collections []PostmanCollection `json:"collections"`
 }
 type PostmanCollection struct {
-	Id string `json:"id"`
+	Id   string `json:"id"`
 	Name string `json:"name"`
 }
+
 func GetPostmanCollections() []PostmanCollection {
 	var specification = config.Config
 	var apiKey = specification.PostmanApiKey
@@ -28,7 +29,6 @@ func GetPostmanCollections() []PostmanCollection {
 	parameters := url.Values{}
 	parameters.Add("apikey", apiKey)
 	collectionsUrl.RawQuery = parameters.Encode()
-
 
 	response, err := http.Get(collectionsUrl.String())
 	if err != nil {

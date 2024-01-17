@@ -12,25 +12,28 @@ import (
 )
 
 type PostmanEnvironmentResult struct {
-	Environments []PostmanEnvironment `json:"Environments"`
+	Environments []PostmanEnvironment `json:"environments"`
 }
 type PostmanEnvironment struct {
-	Id string `json:"id"`
+	Id   string `json:"id"`
 	Name string `json:"name"`
 }
 
 func GetPostEnvironmentId(environmentIdOrName string) (string, error) {
-	//check if uuid
+	log.Info().Msgf("Searching for environment with id or name '%s'", environmentIdOrName)
 	environmentId, err := uuid.Parse(environmentIdOrName)
 	if err == nil {
+		log.Info().Msgf("Found environment id '%s'", environmentId.String())
 		return environmentId.String(), nil
 	}
 
 	environments := GetPostmanEnvironments()
+	log.Info().Msgf("Found %d environments", len(environments))
 	var uniqueEnvironmentId string
 	counter := 0
 	for _, environment := range environments {
 		if environment.Name == environmentIdOrName {
+			log.Info().Msgf("Found environment with name '%s' and id '%s'", environment.Name, environment.Id)
 			counter++
 			uniqueEnvironmentId = environment.Id
 		}
@@ -56,7 +59,6 @@ func GetPostmanEnvironments() []PostmanEnvironment {
 	parameters := url.Values{}
 	parameters.Add("apikey", apiKey)
 	EnvironmentsUrl.RawQuery = parameters.Encode()
-
 
 	response, err := http.Get(EnvironmentsUrl.String())
 	if err != nil {

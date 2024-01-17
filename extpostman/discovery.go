@@ -89,9 +89,9 @@ func (d *collectionDiscovery) DiscoverTargets(_ context.Context) ([]discovery_ki
 			TargetType: targetID,
 			Label:      collection.Name,
 			Attributes: map[string][]string{
-				"steadybit.label":     {collection.Name},
-				"postman.collection.id":     {collection.Id},
-				"postman.collection.name":     {collection.Name},
+				"steadybit.label":         {collection.Name},
+				"postman.collection.id":   {collection.Id},
+				"postman.collection.name": {collection.Name},
 			},
 		}
 	}

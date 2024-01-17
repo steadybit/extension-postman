@@ -24,9 +24,9 @@ func TestPrepareCollectionRun(t *testing.T) {
 	// Given
 	requestBody := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]interface{}{
-			"duration":      60000,
+			"duration":            60000,
 			"EnvironmentIdOrName": "5f757f0d-de24-462c-867f-256bb696d2dd",
-			"iterations":    2,
+			"iterations":          2,
 			"environment": []map[string]string{
 				{"key": "Test1", "value": "foo"},
 				{"key": "Test2", "value": "bar"},
@@ -61,13 +61,13 @@ func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
 	// Given
 	requestBody := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]interface{}{
-			"duration":       60000,
-			"EnvironmentIdOrName":  "5f757f0d-de24-462c-867f-256bb696d2dd",
-			"iterations":     2,
-			"environment":    []map[string]string{},
-			"timeout":        30000,
-			"timeoutRequest": 30000,
-			"verbose":        true,
+			"duration":            60000,
+			"EnvironmentIdOrName": "5f757f0d-de24-462c-867f-256bb696d2dd",
+			"iterations":          2,
+			"environment":         []map[string]string{},
+			"timeout":             30000,
+			"timeoutRequest":      30000,
+			"verbose":             true,
 		},
 		Target: &action_kit_api.Target{
 			Attributes: map[string][]string{

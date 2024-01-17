@@ -28,6 +28,11 @@ manifest should match snapshot using podAnnotations and Labels:
         spec:
           containers:
             - env:
+                - name: STEADYBIT_EXTENSION_POSTMAN_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: apiKey
+                      name: steadybit-extension-postman
                 - name: STEADYBIT_LOG_LEVEL
                   value: INFO
                 - name: STEADYBIT_LOG_FORMAT
@@ -104,6 +109,11 @@ manifest should match snapshot with TLS:
         spec:
           containers:
             - env:
+                - name: STEADYBIT_EXTENSION_POSTMAN_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: apiKey
+                      name: steadybit-extension-postman
                 - name: STEADYBIT_LOG_LEVEL
                   value: INFO
                 - name: STEADYBIT_LOG_FORMAT
@@ -191,6 +201,11 @@ manifest should match snapshot with extra env vars:
         spec:
           containers:
             - env:
+                - name: STEADYBIT_EXTENSION_POSTMAN_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: apiKey
+                      name: steadybit-extension-postman
                 - name: STEADYBIT_LOG_LEVEL
                   value: INFO
                 - name: STEADYBIT_LOG_FORMAT
@@ -276,6 +291,11 @@ manifest should match snapshot with extra labels:
         spec:
           containers:
             - env:
+                - name: STEADYBIT_EXTENSION_POSTMAN_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: apiKey
+                      name: steadybit-extension-postman
                 - name: STEADYBIT_LOG_LEVEL
                   value: INFO
                 - name: STEADYBIT_LOG_FORMAT
@@ -352,6 +372,11 @@ manifest should match snapshot with mutual TLS:
         spec:
           containers:
             - env:
+                - name: STEADYBIT_EXTENSION_POSTMAN_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: apiKey
+                      name: steadybit-extension-postman
                 - name: STEADYBIT_LOG_LEVEL
                   value: INFO
                 - name: STEADYBIT_LOG_FORMAT
@@ -448,6 +473,11 @@ manifest should match snapshot with mutual TLS using containerPaths:
         spec:
           containers:
             - env:
+                - name: STEADYBIT_EXTENSION_POSTMAN_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: apiKey
+                      name: steadybit-extension-postman
                 - name: STEADYBIT_LOG_LEVEL
                   value: INFO
                 - name: STEADYBIT_LOG_FORMAT
@@ -530,6 +560,11 @@ manifest should match snapshot with podSecurityContext:
         spec:
           containers:
             - env:
+                - name: STEADYBIT_EXTENSION_POSTMAN_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: apiKey
+                      name: steadybit-extension-postman
                 - name: STEADYBIT_LOG_LEVEL
                   value: INFO
                 - name: STEADYBIT_LOG_FORMAT
@@ -608,6 +643,11 @@ manifest should match snapshot with priority class:
         spec:
           containers:
             - env:
+                - name: STEADYBIT_EXTENSION_POSTMAN_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: apiKey
+                      name: steadybit-extension-postman
                 - name: STEADYBIT_LOG_LEVEL
                   value: INFO
                 - name: STEADYBIT_LOG_FORMAT
@@ -685,6 +725,11 @@ manifest should match snapshot without TLS:
         spec:
           containers:
             - env:
+                - name: STEADYBIT_EXTENSION_POSTMAN_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: apiKey
+                      name: steadybit-extension-postman
                 - name: STEADYBIT_LOG_LEVEL
                   value: INFO
                 - name: STEADYBIT_LOG_FORMAT

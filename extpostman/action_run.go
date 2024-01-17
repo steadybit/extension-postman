@@ -35,13 +35,13 @@ type PostmanState struct {
 }
 
 type PostmanConfig struct {
-	EnvironmentIdOrName  string
-	Environment    []map[string]string
-	Verbose        bool
-	Bail           bool
-	Timeout        int
-	TimeoutRequest int
-	Iterations     int
+	EnvironmentIdOrName string
+	Environment         []map[string]string
+	Verbose             bool
+	Bail                bool
+	Timeout             int
+	TimeoutRequest      int
+	Iterations          int
 }
 
 func NewPostmanAction() action_kit_sdk.Action[PostmanState] {

@@ -17,10 +17,10 @@ Learn about the capabilities of this extension in our [Reliability Hub](https://
 Postman_Api_Key
 ## Configuration
 
-| Environment Variable | Helm value             | Meaning                                                     | Required | Default |
-|----------------------|------------------------|-------------------------------------------------------------|----------|---------|
-| `HTTPS_PROXY`        | via extraEnv variables | Configure the proxy to be used for Postman communication.   | no       |         |
-| `POSTMAN_API_KEY`    | postman.apiKey         | Configure the api-key to be used for Postman communication. | yes      |         |
+| Environment Variable                  | Helm value             | Meaning                                                     | Required | Default |
+|---------------------------------------|------------------------|-------------------------------------------------------------|----------|---------|
+| `HTTPS_PROXY`                         | via extraEnv variables | Configure the proxy to be used for Postman communication.   | no       |         |
+| `STEADYBIT_EXTENSION_POSTMAN_API_KEY` | postman.apiKey         | Configure the api-key to be used for Postman communication. | yes      |         |
 
 The extension supports all environment variables provided by [steadybit/extension-kit](https://github.com/steadybit/extension-kit#environment-variables).
 
