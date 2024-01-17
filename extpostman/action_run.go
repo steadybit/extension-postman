@@ -35,15 +35,13 @@ type PostmanState struct {
 }
 
 type PostmanConfig struct {
-	CollectionId   string
-	ApiKey         string
-	EnvironmentId  string
-	Environment    []map[string]string
-	Verbose        bool
-	Bail           bool
-	Timeout        int
-	TimeoutRequest int
-	Iterations     int
+	EnvironmentIdOrName string
+	Environment         []map[string]string
+	Verbose             bool
+	Bail                bool
+	Timeout             int
+	TimeoutRequest      int
+	Iterations          int
 }
 
 func NewPostmanAction() action_kit_sdk.Action[PostmanState] {
@@ -61,12 +59,28 @@ func (f PostmanAction) NewEmptyState() PostmanState {
 
 func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 	return action_kit_api.ActionDescription{
-		Id:          "com.steadybit.extension_postman.collection.run",
+		Id:          targetID + ".run.v2",
 		Label:       "Postman",
 		Description: "Integrate a Postman Collection via Postman Cloud API.",
 		Version:     extbuild.GetSemverVersionStringOrUnknown(),
 		Kind:        action_kit_api.Check,
 		Icon:        extutil.Ptr(icon),
+		TargetSelection: extutil.Ptr(action_kit_api.TargetSelection{
+			// The target type this action is for
+			TargetType: targetID,
+			// You can provide a list of target templates to help the user select targets.
+			// A template can be used to pre-fill a selection
+			SelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
+				{
+					Label: "by collection name",
+					Query: "postman.collection.name=\"\"",
+				},
+				{
+					Label: "by collection id",
+					Query: "postman.collection.id=\"\"",
+				},
+			}),
+		}),
 		TimeControl: action_kit_api.TimeControlInternal,
 		Parameters: []action_kit_api.ActionParameter{
 			{
@@ -78,23 +92,9 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 				Type:         action_kit_api.Duration,
 			},
 			{
-				Name:        "apiKey",
-				Label:       "API-Key",
-				Description: extutil.Ptr("Postman Cloud API Key"),
-				Required:    extutil.Ptr(true),
-				Type:        action_kit_api.Password,
-			},
-			{
-				Name:        "collectionId",
-				Label:       "Collection ID",
-				Description: extutil.Ptr("UID of the Postman Collection"),
-				Required:    extutil.Ptr(true),
-				Type:        action_kit_api.String,
-			},
-			{
-				Name:        "environmentId",
-				Label:       "Environment ID",
-				Description: extutil.Ptr("UID of the Postman Environment"),
+				Name:        "environmentIdOrName",
+				Label:       "Environment ID or Name",
+				Description: extutil.Ptr("UID or unique Name of the Postman Environment"),
 				Required:    extutil.Ptr(false),
 				Type:        action_kit_api.String,
 			},
@@ -162,15 +162,28 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw actio
 	}
 	config := config.Config
 
+	collectionIds := raw.Target.Attributes["postman.collection.id"]
+	if len(collectionIds) == 0 {
+		return nil, extension_kit.ToError("No collection id provided", nil)
+	}
+	if len(collectionIds) > 1 {
+		return nil, extension_kit.ToError("More than one collection id provided", nil)
+	}
+	var collectionId = collectionIds[0]
+
 	state.Timestamp = time.Now().Format(time.RFC3339)
 	state.Command = []string{
 		"newman",
 		"run",
-		fmt.Sprintf("%s/collections/%s?apikey=%s", config.PostmanBaseUrl, request.CollectionId, request.ApiKey),
+		fmt.Sprintf("%s/collections/%s?apikey=%s", config.PostmanBaseUrl, collectionId, config.PostmanApiKey),
 	}
-	if request.EnvironmentId != "" {
+	if request.EnvironmentIdOrName != "" {
+		environmentId, error := GetPostEnvironmentId(request.EnvironmentIdOrName)
+		if error != nil {
+			return nil, extension_kit.ToError("Failed to get environment id.", error)
+		}
 		state.Command = append(state.Command, "--environment")
-		state.Command = append(state.Command, fmt.Sprintf("%s/environments/%s?apikey=%s", config.PostmanBaseUrl, request.EnvironmentId, request.ApiKey))
+		state.Command = append(state.Command, fmt.Sprintf("%s/environments/%s?apikey=%s", config.PostmanBaseUrl, environmentId, config.PostmanApiKey))
 	}
 	if request.Environment != nil {
 		for _, value := range request.Environment {
@@ -205,7 +218,7 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw actio
 		state.Command = append(state.Command, "-n")
 		state.Command = append(state.Command, fmt.Sprintf("%d", request.Iterations))
 	}
-	log.Info().Msgf("Prepared action. Command: %s", extutil.MaskString(strings.Join(state.Command, " "), request.ApiKey, 4))
+	log.Info().Msgf("Prepared action. Command: %s", extutil.MaskString(strings.Join(state.Command, " "), config.PostmanApiKey, 4))
 	return nil, nil
 }
 

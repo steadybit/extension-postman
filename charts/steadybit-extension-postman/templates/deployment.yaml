@@ -49,6 +49,11 @@ spec:
               memory: {{ .Values.resources.limits.memory }}
               cpu: {{ .Values.resources.limits.cpu }}
           env:
+            - name: STEADYBIT_EXTENSION_POSTMAN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "postman.secret.name" . }}
+                  key: apiKey
             {{- include "extensionlib.deployment.env" (list .) | nindent 12 }}
             {{- with .Values.extraEnv }}
               {{- toYaml . | nindent 12 }}

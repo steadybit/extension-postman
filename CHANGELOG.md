@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0.0
+
+- Breaking Changes
+- Configure ApiKey in the extension configuration
+- Discovery of Postman Collections
+- Support for Postman Environments to select the correct environment for the collection by name
+- Use a Postman Collection a target for the action
+
 ## v1.5.8
 
 - Update dependencies

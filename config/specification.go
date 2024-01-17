@@ -5,4 +5,5 @@ package config
 
 type Specification struct {
 	PostmanBaseUrl string `json:"postmanBaseUrl" split_words:"true" required:"false" default:"https://api.getpostman.com"`
+	PostmanApiKey  string `json:"postmanApiKey" split_words:"true" required:"true"`
 }
