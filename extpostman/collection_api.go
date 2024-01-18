@@ -35,6 +35,10 @@ func GetPostmanCollections() []PostmanCollection {
 		log.Error().Msgf("Failed to get collections from postman api. Got error: %s", err)
 		return nil
 	}
+	if response.StatusCode != 200 {
+		log.Error().Msgf("Failed to get collections from postman api. Got status code: %s", response.Status)
+		return nil
+	}
 
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
