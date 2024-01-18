@@ -54,7 +54,7 @@ func (d *collectionDiscovery) DescribeTarget() discovery_kit_api.TargetDescripti
 		Icon:    extutil.Ptr(icon),
 
 		// Labels used in the UI
-		Label: discovery_kit_api.PluralLabel{One: "Collection", Other: "Collections"},
+		Label: discovery_kit_api.PluralLabel{One: "Postman Collection", Other: "Postman Collections"},
 
 		// Category for the targets to appear in
 		Category: extutil.Ptr("postman"),
