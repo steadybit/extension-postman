@@ -1,1 +1,1 @@
-{{- include "extensionlib.service" (list . 8086 (list "ACTION")) -}}
+{{- include "extensionlib.service" (list . 8086 (list "ACTION" "DISCOVERY")) -}}
