@@ -6,11 +6,13 @@ package extpostman
 
 import (
 	"context"
+	"github.com/rs/zerolog/log"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_commons"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_sdk"
 	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/extutil"
+	"github.com/steadybit/extension-postman/config"
 	"time"
 )
 
@@ -24,9 +26,14 @@ var (
 
 func NewPostmanCollectionDiscovery() discovery_kit_sdk.TargetDiscovery {
 	discovery := &collectionDiscovery{}
+	interval, err := time.ParseDuration(config.Config.PostmanCollectionDiscoveryInterval)
+	if err != nil {
+		log.Error().Msgf("Failed to parse Postman collection discovery interval: %s", err)
+		return nil
+	}
 	return discovery_kit_sdk.NewCachedTargetDiscovery(discovery,
 		discovery_kit_sdk.WithRefreshTargetsNow(),
-		discovery_kit_sdk.WithRefreshTargetsInterval(context.Background(), 1*time.Minute),
+		discovery_kit_sdk.WithRefreshTargetsInterval(context.Background(), interval),
 	)
 }
 
