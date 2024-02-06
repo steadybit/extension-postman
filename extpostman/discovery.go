@@ -39,8 +39,7 @@ func NewPostmanCollectionDiscovery() discovery_kit_sdk.TargetDiscovery {
 
 func (d *collectionDiscovery) Describe() discovery_kit_api.DiscoveryDescription {
 	return discovery_kit_api.DiscoveryDescription{
-		Id:         targetID,
-		RestrictTo: extutil.Ptr(discovery_kit_api.LEADER),
+		Id: targetID,
 		Discover: discovery_kit_api.DescribingEndpointReferenceWithCallInterval{
 			CallInterval: extutil.Ptr("1m"),
 		},
