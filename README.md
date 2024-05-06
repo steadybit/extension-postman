@@ -46,7 +46,7 @@ helm upgrade steadybit-extension-postman \
     --wait \
     --timeout 5m0s \
     --create-namespace \
-    --namespace steadybit-extension \
+    --namespace steadybit-agent \
     --set postman.apiKey=<YOUR_API_KEY> \
     steadybit-extension-postman/steadybit-extension-postman
 ```
