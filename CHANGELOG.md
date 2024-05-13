@@ -1,8 +1,9 @@
 # Changelog
 
-## v2.0.4 (next)
+## v2.0.4
 
 - Update dependencies (go 1.22)
+- Node 18.20.2 - [CVE-2024-27980](https://www.cve.org/CVERecord?id=CVE-2024-27980)
 
 ## v2.0.3
 
