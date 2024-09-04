@@ -6,7 +6,7 @@ permissions:
   pull-requests: write
 
 # WARNING - Make sure the repo:
-# - has setup up branch protection rules (required status checks) - otherwise all PR will be merged without waiting for build results
+# - has set up branch protection rules (required status checks) - otherwise all PR will be merged without waiting for build results
 # - allows auto-merge (settings -> general -> Pull Requests -> Allow Auto-Merge)
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
         id: metadata
         uses: dependabot/fetch-metadata@v2
         with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          github-token: "${{secrets.GITHUB_TOKEN}}"
       - name: Enable auto-merge for Dependabot PRs
         if: ${{steps.metadata.outputs.package-ecosystem == 'github_actions' || (steps.metadata.outputs.update-type == 'version-update:semver-minor' || steps.metadata.outputs.update-type == 'version-update:semver-patch')}}
         run: gh pr merge --auto --merge "$PR_URL"

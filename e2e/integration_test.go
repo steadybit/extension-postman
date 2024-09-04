@@ -68,7 +68,7 @@ func validateDiscovery(t *testing.T, _ *e2e.Minikube, e *e2e.Extension) {
 }
 
 func testDiscovery(t *testing.T, _ *e2e.Minikube, e *e2e.Extension) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
 	target, err := e2e.PollForTarget(ctx, e, "com.steadybit.extension_postman.collection", func(target discovery_kit_api.Target) bool {
