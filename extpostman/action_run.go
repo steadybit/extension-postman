@@ -65,6 +65,7 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 		Version:     extbuild.GetSemverVersionStringOrUnknown(),
 		Kind:        action_kit_api.Check,
 		Icon:        extutil.Ptr(icon),
+		Technology:  extutil.Ptr("Postman"),
 		TargetSelection: extutil.Ptr(action_kit_api.TargetSelection{
 			// The target type this action is for
 			TargetType: targetID,
