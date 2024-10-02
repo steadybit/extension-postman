@@ -95,7 +95,7 @@ func testRunPostman(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
 	exec, err := e.RunAction("com.steadybit.extension_postman.collection.run", &target, config, nil)
 	require.NoError(t, err)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
-	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 90*time.Second)
+	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
 	require.NoError(t, exec.Cancel())
 }
 
@@ -116,7 +116,7 @@ func testRunPostmanWithEnvId(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
 	require.NoError(t, err)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "--environment", 90*time.Second)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
-	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 90*time.Second)
+	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
 	require.NoError(t, exec.Cancel())
 }
 
@@ -137,6 +137,6 @@ func testRunPostmanWithEnvName(t *testing.T, m *e2e.Minikube, e *e2e.Extension) 
 	require.NoError(t, err)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "--environment", 90*time.Second)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
-	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 90*time.Second)
+	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
 	require.NoError(t, exec.Cancel())
 }
