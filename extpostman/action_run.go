@@ -66,6 +66,7 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 		Kind:        action_kit_api.Check,
 		Icon:        extutil.Ptr(icon),
 		Technology:  extutil.Ptr("Postman"),
+		Category:    extutil.Ptr("Postman"), //Can be removed in Q1/24 - support for backward compatibility of old sidebar
 		TargetSelection: extutil.Ptr(action_kit_api.TargetSelection{
 			// The target type this action is for
 			TargetType: targetID,
