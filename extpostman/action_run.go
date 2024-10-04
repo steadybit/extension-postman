@@ -20,6 +20,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -261,6 +262,17 @@ func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_k
 	exitCode := cmdState.Cmd.ProcessState.ExitCode()
 	if exitCode == -1 {
 		log.Info().Msgf("Postman is still running")
+
+		//Check if the process is still running and not killed by signal
+		err = cmdState.Cmd.Process.Signal(syscall.Signal(0))
+		if err != nil {
+			log.Info().Msgf("Postman is not running anymore.")
+			result.Error = &action_kit_api.ActionKitError{
+				Status: extutil.Ptr(action_kit_api.Errored),
+				Title:  "Postman process is not running anymore.",
+			}
+			result.Completed = true
+		}
 		result.Completed = false
 	} else if exitCode == 0 {
 		log.Info().Msgf("Postman run completed successfully")
