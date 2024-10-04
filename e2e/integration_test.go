@@ -208,7 +208,7 @@ func findLogDebug(m *e2e.Minikube, pod metav1.Object, expectedLog string, second
 	}
 	podLogString := buf.String()
 	log.Info().Msgf("Try to find log for '%s' in %d bytes", expectedLog, len(podLogString))
-	log.Info().Msgf("POD-LOG: %s", expectedLog, podLogString)
+	log.Info().Msgf("POD-LOG: %s", podLogString)
 	if strings.Contains(podLogString, expectedLog) {
 		log.Info().Msg("Found log!")
 		return true
