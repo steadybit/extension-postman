@@ -4,6 +4,7 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/rs/zerolog/log"
@@ -12,8 +13,12 @@ import (
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_test/validate"
 	"github.com/steadybit/extension-kit/extlogging"
+	"github.com/steadybit/extension-kit/extutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"io"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"testing"
 	"time"
@@ -94,8 +99,8 @@ func testRunPostman(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
 
 	exec, err := e.RunAction("com.steadybit.extension_postman.collection.run", &target, config, nil)
 	require.NoError(t, err)
-	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
-	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
+	AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
+	AssertLogContainsWithTimeoutDebug(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
 	require.NoError(t, exec.Cancel())
 }
 
@@ -114,9 +119,9 @@ func testRunPostmanWithEnvId(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
 
 	exec, err := e.RunAction("com.steadybit.extension_postman.collection.run", &target, config, nil)
 	require.NoError(t, err)
-	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "--environment", 90*time.Second)
-	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
-	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
+	AssertLogContainsWithTimeout(t, m, e.Pod, "--environment", 90*time.Second)
+	AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
+	AssertLogContainsWithTimeoutDebug(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
 	require.NoError(t, exec.Cancel())
 }
 
@@ -135,8 +140,78 @@ func testRunPostmanWithEnvName(t *testing.T, m *e2e.Minikube, e *e2e.Extension) 
 
 	exec, err := e.RunAction("com.steadybit.extension_postman.collection.run", &target, config, nil)
 	require.NoError(t, err)
-	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "--environment", 90*time.Second)
-	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
-	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
+	AssertLogContainsWithTimeout(t, m, e.Pod, "--environment", 90*time.Second)
+	AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
+	AssertLogContainsWithTimeoutDebug(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
 	require.NoError(t, exec.Cancel())
+}
+
+func AssertLogContainsWithTimeout(t *testing.T, m *e2e.Minikube, pod metav1.Object, expectedLog string, timeout time.Duration) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	var sinceSeconds *int64
+	sinceSeconds = extutil.Ptr(int64(180))
+	for {
+		select {
+		case <-ctx.Done():
+			assert.Fail(t, fmt.Sprintf("Failed to find log '%s'", expectedLog))
+			return
+		case <-time.After(2000 * time.Millisecond):
+			found := findLogDebug(m, pod, expectedLog, sinceSeconds)
+			if found {
+				return
+			}
+			//after first try only look for last 5 seconds
+			sinceSeconds = extutil.Ptr(int64(5))
+		}
+	}
+}
+
+func AssertLogContainsWithTimeoutDebug(t *testing.T, m *e2e.Minikube, pod metav1.Object, expectedLog string, timeout time.Duration) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	var sinceSeconds *int64
+	sinceSeconds = extutil.Ptr(int64(180))
+	for {
+		select {
+		case <-ctx.Done():
+			assert.Fail(t, fmt.Sprintf("Failed to find log '%s'", expectedLog))
+			return
+		case <-time.After(2000 * time.Millisecond):
+			found := findLogDebug(m, pod, expectedLog, sinceSeconds)
+			if found {
+				return
+			}
+			//after first try only look for last 5 seconds
+			sinceSeconds = extutil.Ptr(int64(5))
+		}
+	}
+}
+
+func findLogDebug(m *e2e.Minikube, pod metav1.Object, expectedLog string, seconds *int64) bool {
+	logCtx, logCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer logCancel()
+	podLogs, err := m.GetClient().CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), &corev1.PodLogOptions{SinceSeconds: seconds}).Stream(logCtx)
+
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to read logs from pod")
+	}
+	defer func() { _ = podLogs.Close() }()
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to read logs from pod (copy)")
+	}
+	podLogString := buf.String()
+	log.Info().Msgf("Try to find log for '%s' in %d bytes", expectedLog, len(podLogString))
+	log.Info().Msgf("POD-LOG: %s", expectedLog, podLogString)
+	if strings.Contains(podLogString, expectedLog) {
+		log.Info().Msg("Found log!")
+		return true
+	}
+	return false
 }
