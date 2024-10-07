@@ -33,8 +33,6 @@ func TestWithMinikube(t *testing.T) {
 			return []string{
 				"--set", "logging.level=debug",
 				"--set", "postman.apiKey=testApiKey",
-				"--set", "resources.limits.cpu=500m",
-				"--set", "resources.limits.memory=512Mi",
 				"--set", "extraEnv[0].name=STEADYBIT_EXTENSION_POSTMAN_BASE_URL",
 				"--set", fmt.Sprintf("extraEnv[0].value=%s:%s", "http://host.minikube.internal", port),
 			}
