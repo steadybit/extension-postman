@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.0.6
+
+- Set new `Technology` property in extension description
+- Update dependencies (go 1.23)
+
 ## v2.0.5
 
 - update dependencies
