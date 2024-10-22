@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.7
+
+- Update newman dependency
+
 ## v2.0.6
 
 - Set new `Technology` property in extension description
