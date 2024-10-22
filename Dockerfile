@@ -33,7 +33,7 @@ RUN make licenses-report
 ##
 ## Runtime
 ##
-FROM node:18-alpine
+FROM node:23-alpine
 
 LABEL "steadybit.com.discovery-disabled"="true"
 
