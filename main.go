@@ -32,7 +32,7 @@ func main() {
 	action_kit_sdk.RegisterCoverageEndpoints()
 	discovery_kit_sdk.Register(extpostman.NewPostmanCollectionDiscovery())
 	action_kit_sdk.RegisterAction(extpostman.NewPostmanAction())
-	action_kit_sdk.InstallSignalHandler()
+	extsignals.ActivateSignalHandlers()
 
 	exthttp.RegisterHttpHandler("/", exthttp.GetterAsHandler(getExtensionList))
 	exthttp.Listen(exthttp.ListenOpts{
