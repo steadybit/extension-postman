@@ -15,6 +15,7 @@ import (
 	"github.com/steadybit/extension-kit/exthttp"
 	"github.com/steadybit/extension-kit/extlogging"
 	"github.com/steadybit/extension-kit/extruntime"
+	"github.com/steadybit/extension-kit/extsignals"
 	"github.com/steadybit/extension-postman/config"
 	"github.com/steadybit/extension-postman/extpostman"
 	_ "go.uber.org/automaxprocs" // Importing automaxprocs automatically adjusts GOMAXPROCS.
