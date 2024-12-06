@@ -1,8 +1,8 @@
 apiVersion: v2
 name: steadybit-extension-postman
 description: Steadybit Postman extension Helm chart for Kubernetes.
-version: 1.7.10
-appVersion: v2.0.7
+version: 1.7.11
+appVersion: v2.0.8
 home: https://www.steadybit.com/
 icon: https://steadybit-website-assets.s3.amazonaws.com/logo-symbol-transparent.png
 maintainers:
