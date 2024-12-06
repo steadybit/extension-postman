@@ -90,15 +90,10 @@ spec:
             httpGet:
               path: /health/readiness
               port: 8087
+          {{- with .Values.containerSecurityContext }}
           securityContext:
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
-            runAsUser: 10000
-            runAsGroup: 10000
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
       volumes:
         - name: tmp-dir
           emptyDir: { }
