@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.0.8
+
+- update dependencies
+- Use uid instead of name for user statement in Dockerfile
+
 ## v2.0.7
 
 - Update newman dependency
