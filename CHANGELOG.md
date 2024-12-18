@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.9
+
+- update dependencies (CVE-2024-21538)
+
 ## v2.0.8
 
 - update dependencies

@@ -39,7 +39,8 @@ LABEL "steadybit.com.discovery-disabled"="true"
 
 ENV LC_ALL="en_US.UTF-8" LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" ALPINE_NODE_REPO="oznu/alpine-node"
 
-RUN npm install -g --ignore-scripts newman@6.2.1 newman-reporter-json-summary@1.0.14 newman-reporter-htmlextra@1.23.1
+RUN npm install -g npm@11 && \
+    npm install -g --ignore-scripts newman@6.2.1 newman-reporter-json-summary@1.0.14 newman-reporter-htmlextra@1.23.1
 
 ARG USERNAME=steadybit
 ARG USER_UID=10000
