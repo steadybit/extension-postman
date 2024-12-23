@@ -75,11 +75,11 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 			// A template can be used to pre-fill a selection
 			SelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
 				{
-					Label: "by collection name",
+					Label: "collection name",
 					Query: "postman.collection.name=\"\"",
 				},
 				{
-					Label: "by collection id",
+					Label: "collection id",
 					Query: "postman.collection.id=\"\"",
 				},
 			}),
