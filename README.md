@@ -72,7 +72,7 @@ This extension is currently not available as a Linux package.
 ## Extension registration
 
 Make sure that the extension is registered with the agent. In most cases this is done automatically. Please refer to
-the [documentation](https://docs.steadybit.com/install-and-configure/install-agent/extension-discovery) for more
+the [documentation](https://docs.steadybit.com/install-and-configure/install-agent/extension-registration) for more
 information about extension registration and how to verify.
 
 ## Proxy
