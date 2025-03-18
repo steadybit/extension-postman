@@ -5,12 +5,15 @@
 ##
 FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS build
 
-ARG TARGETOS TARGETARCH
+ARG TARGETOS
+ARG TARGETARCH
 ARG NAME
 ARG VERSION
 ARG REVISION
 ARG ADDITIONAL_BUILD_PARAMS
 ARG SKIP_LICENSES_REPORT=false
+ARG VERSION=unknown
+ARG REVISION=unknown
 
 WORKDIR /app
 
@@ -35,7 +38,13 @@ RUN make licenses-report
 ##
 FROM node:23-alpine
 
+ARG VERSION=unknown
+ARG REVISION=unknown
+
 LABEL "steadybit.com.discovery-disabled"="true"
+LABEL "version"="${VERSION}"
+LABEL "revision"="${REVISION}"
+RUN echo "$VERSION" > /version.txt && echo "$REVISION" > /revision.txt
 
 ENV LC_ALL="en_US.UTF-8" LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" ALPINE_NODE_REPO="oznu/alpine-node"
 
