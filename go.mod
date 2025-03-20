@@ -1,4 +1,4 @@
-module github.com/steadybit/extension-postman
+module github.com/steadybit/extension-postman/v2
 
 go 1.24
 

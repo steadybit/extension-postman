@@ -12,7 +12,7 @@ import (
 	"github.com/steadybit/discovery-kit/go/discovery_kit_sdk"
 	"github.com/steadybit/extension-kit/extbuild"
 	"github.com/steadybit/extension-kit/extutil"
-	"github.com/steadybit/extension-postman/config"
+	"github.com/steadybit/extension-postman/v2/config"
 	"time"
 )
 

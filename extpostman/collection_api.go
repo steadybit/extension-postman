@@ -3,7 +3,7 @@ package extpostman
 import (
 	"encoding/json"
 	"github.com/rs/zerolog/log"
-	"github.com/steadybit/extension-postman/config"
+	"github.com/steadybit/extension-postman/v2/config"
 	"io"
 	"net/http"
 	"net/url"

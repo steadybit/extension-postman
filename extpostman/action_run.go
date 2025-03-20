@@ -16,7 +16,7 @@ import (
 	"github.com/steadybit/extension-kit/extconversion"
 	"github.com/steadybit/extension-kit/extfile"
 	"github.com/steadybit/extension-kit/extutil"
-	"github.com/steadybit/extension-postman/config"
+	"github.com/steadybit/extension-postman/v2/config"
 	"os"
 	"os/exec"
 	"strings"

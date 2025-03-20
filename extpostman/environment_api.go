@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	"github.com/steadybit/extension-postman/config"
+	"github.com/steadybit/extension-postman/v2/config"
 	"io"
 	"net/http"
 	"net/url"
