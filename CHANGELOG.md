@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.11
+
+- Fix Postman API access
+
 ## v2.0.10
 
 - Updated dependencies
