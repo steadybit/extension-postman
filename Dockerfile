@@ -36,7 +36,7 @@ RUN make licenses-report
 ##
 ## Runtime
 ##
-FROM node:23-alpine
+FROM node:24-alpine
 
 ARG VERSION=unknown
 ARG REVISION=unknown
