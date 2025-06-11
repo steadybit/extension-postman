@@ -61,12 +61,12 @@ func (d *collectionDiscovery) DescribeTarget() discovery_kit_api.TargetDescripti
 		// Specify attributes shown in table columns and to be used for sorting
 		Table: discovery_kit_api.Table{
 			Columns: []discovery_kit_api.Column{
-				{Attribute: "steadybit.label"},
+				{Attribute: "postman.collection.name"},
 				{Attribute: "postman.collection.id"},
 			},
 			OrderBy: []discovery_kit_api.OrderBy{
 				{
-					Attribute: "steadybit.label",
+					Attribute: "postman.collection.name",
 					Direction: "ASC",
 				},
 			},
@@ -76,6 +76,13 @@ func (d *collectionDiscovery) DescribeTarget() discovery_kit_api.TargetDescripti
 
 func (d *collectionDiscovery) DescribeAttributes() []discovery_kit_api.AttributeDescription {
 	return []discovery_kit_api.AttributeDescription{
+		{
+			Attribute: "postman.collection.name",
+			Label: discovery_kit_api.PluralLabel{
+				One:   "Collection Name",
+				Other: "Collection Names",
+			},
+		},
 		{
 			Attribute: "postman.collection.id",
 			Label: discovery_kit_api.PluralLabel{
@@ -95,7 +102,6 @@ func (d *collectionDiscovery) DiscoverTargets(_ context.Context) ([]discovery_ki
 			TargetType: targetID,
 			Label:      collection.Name,
 			Attributes: map[string][]string{
-				"steadybit.label":         {collection.Name},
 				"postman.collection.id":   {collection.Id},
 				"postman.collection.name": {collection.Name},
 			},

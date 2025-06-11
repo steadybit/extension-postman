@@ -73,13 +73,12 @@ func testDiscovery(t *testing.T, _ *e2e.Minikube, e *e2e.Extension) {
 
 	target, err := e2e.PollForTarget(ctx, e, "com.steadybit.extension_postman.collection", func(target discovery_kit_api.Target) bool {
 		log.Info().Msgf("Checking target: %s", target)
-		return e2e.HasAttribute(target, "steadybit.label", "shopping-demo")
+		return e2e.HasAttribute(target, "postman.collection.name", "shopping-demo")
 	})
 
 	require.NoError(t, err)
 	assert.Equal(t, target.TargetType, "com.steadybit.extension_postman.collection")
 	assert.Equal(t, target.Attributes["postman.collection.id"], []string{collectionId})
-	assert.Equal(t, target.Attributes["postman.collection.name"], []string{"shopping-demo"})
 }
 
 func testRunPostman(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
