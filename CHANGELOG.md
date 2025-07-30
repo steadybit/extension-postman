@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.0.13
+
+- Updated dependencies
+- Added a label for the postman collection name target attribubte
+
 ## v2.0.12
 
 - Updated dependencies
