@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.15
+
+- Updated dependencies
+
 ## v2.0.14
 
 - Dummy Release to test creating a Github Release
