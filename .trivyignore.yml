@@ -1,10 +1,10 @@
 vulnerabilities:
   - id: CVE-2025-12816
     statement: Waiting for an updated newman version > `6.2.1` - https://github.com/postmanlabs/newman/tags
-    expired_at: 2025-12-31
+    expired_at: 2026-06-01
   - id: CVE-2025-66031
     statement: Waiting for an updated newman version > `6.2.1` - https://github.com/postmanlabs/newman/tags
-    expired_at: 2025-12-31
+    expired_at: 2026-06-01
   - id: CVE-2025-64756
     statement: Aligned ignores to current ignores in Snyk
-    expired_at: 2025-12-31
+    expired_at: 2026-06-01
