@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.18
+
+- Update dependencies
+
 ## v2.0.17
 
 - Update dependencies
@@ -14,12 +18,12 @@
 
 ## v2.0.14
 
-- Dummy Release to test creating a Github Release
+- Dummy Release to test creating a GitHub Release
 
 ## v2.0.13
 
 - Updated dependencies
-- Added a label for the postman collection name target attribubte
+- Added a label for the postman collection name target attribute
 
 ## v2.0.12
 
