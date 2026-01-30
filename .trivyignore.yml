@@ -8,3 +8,6 @@ vulnerabilities:
   - id: CVE-2025-15284
     statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
     expired_at: 2026-06-01
+  - id: CVE-2026-24842
+    statement: Wait for `tar` > 7.5.4 in [npm](https://github.com/npm/cli/blob/latest/package-lock.json#L13458)
+    expired_at: 2026-03-01
