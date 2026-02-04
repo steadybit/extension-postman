@@ -7,6 +7,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+	"syscall"
+	"time"
+
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/action-kit/go/action_kit_sdk"
@@ -17,11 +23,6 @@ import (
 	"github.com/steadybit/extension-kit/extfile"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/steadybit/extension-postman/v2/config"
-	"os"
-	"os/exec"
-	"strings"
-	"syscall"
-	"time"
 )
 
 type PostmanAction struct {
@@ -67,7 +68,7 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 		Kind:        action_kit_api.Check,
 		Icon:        extutil.Ptr(icon),
 		Technology:  extutil.Ptr("Postman"),
-		Category:    extutil.Ptr("Postman"), //Can be removed in Q1/24 - support for backward compatibility of old sidebar
+
 		TargetSelection: extutil.Ptr(action_kit_api.TargetSelection{
 			// The target type this action is for
 			TargetType: targetID,
