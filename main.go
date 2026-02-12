@@ -18,7 +18,6 @@ import (
 	"github.com/steadybit/extension-kit/extsignals"
 	"github.com/steadybit/extension-postman/v2/config"
 	"github.com/steadybit/extension-postman/v2/extpostman"
-	_ "go.uber.org/automaxprocs" // Importing automaxprocs automatically adjusts GOMAXPROCS.
 )
 
 func main() {
