@@ -5,9 +5,15 @@ vulnerabilities:
   - id: CVE-2025-66031
     statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
     expired_at: 2026-06-01
+  - id: CVE-2026-27601
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
   - id: CVE-2026-27903
     statement: Waiting for npm version (>`11.11.0`) to include minimatch `10.2.2`
-    expired_at: 2026-03-09
+    expired_at: 2026-04-09
   - id: CVE-2026-27904
     statement: Waiting for npm version (>`11.11.0`) to include minimatch `10.2.2`
-    expired_at: 2026-03-09
+    expired_at: 2026-04-09
+  - id: CVE-2026-29786
+    statement: Waiting for npm version (>`11.11.0`) to include tar `7.5.10`
+    expired_at: 2026-04-09
