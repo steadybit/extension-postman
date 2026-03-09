@@ -54,7 +54,8 @@ RUN npm install -g npm@11 && \
 ARG USERNAME=steadybit
 ARG USER_UID=10000
 
-RUN adduser -u $USER_UID -D $USERNAME
+RUN apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/* && \
+    adduser -u $USER_UID -D $USERNAME
 
 USER $USER_UID
 
