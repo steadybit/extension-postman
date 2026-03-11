@@ -17,3 +17,6 @@ vulnerabilities:
   - id: CVE-2026-29786
     statement: Waiting for npm version (>`11.11.0`) to include tar `7.5.10`
     expired_at: 2026-04-09
+  - id: CVE-2026-31802
+    statement: Waiting for npm version (>`11.11.0`) to include tar `7.5.11`
+    expired_at: 2026-04-09
