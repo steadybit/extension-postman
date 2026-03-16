@@ -8,6 +8,9 @@ vulnerabilities:
   - id: CVE-2026-27601
     statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
     expired_at: 2026-06-01
+  - id: CVE-2026-32141
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
   - id: CVE-2026-27903
     statement: Waiting for npm version (>`11.11.0`) to include minimatch `10.2.2`
     expired_at: 2026-04-09
