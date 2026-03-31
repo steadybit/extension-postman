@@ -14,15 +14,33 @@ vulnerabilities:
   - id: CVE-2026-33228
     statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
     expired_at: 2026-06-01
-  - id: CVE-2026-27903
-    statement: Waiting for npm version (>`11.11.0`) to include minimatch `10.2.2`
-    expired_at: 2026-04-09
-  - id: CVE-2026-27904
-    statement: Waiting for npm version (>`11.11.0`) to include minimatch `10.2.2`
-    expired_at: 2026-04-09
-  - id: CVE-2026-29786
-    statement: Waiting for npm version (>`11.11.0`) to include tar `7.5.10`
-    expired_at: 2026-04-09
-  - id: CVE-2026-31802
-    statement: Waiting for npm version (>`11.11.0`) to include tar `7.5.11`
-    expired_at: 2026-04-09
+  - id: CVE-2026-33937
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
+  - id: CVE-2026-33938
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
+  - id: CVE-2026-33939
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
+  - id: CVE-2026-33940
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
+  - id: CVE-2026-33941
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
+  - id: CVE-2026-33891
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
+  - id: CVE-2026-33894
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
+  - id: CVE-2026-33895
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
+  - id: CVE-2026-33896
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
+  - id: CVE-2026-33671
+    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
+    expired_at: 2026-06-01
