@@ -44,3 +44,6 @@ vulnerabilities:
   - id: CVE-2026-33671
     statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
     expired_at: 2026-06-01
+  - id: CVE-2026-4046
+    statement: Wait for upstream fix in debian
+    expired_at: 2026-09-01
