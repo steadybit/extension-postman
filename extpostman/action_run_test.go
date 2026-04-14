@@ -23,7 +23,7 @@ func TestPrepareCollectionRun(t *testing.T) {
 	config.ParseConfiguration()
 	// Given
 	requestBody := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"duration":            60000,
 			"EnvironmentIdOrName": "5f757f0d-de24-462c-867f-256bb696d2dd",
 			"iterations":          2,
@@ -60,7 +60,7 @@ func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
 	config.ParseConfiguration()
 	// Given
 	requestBody := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
-		Config: map[string]interface{}{
+		Config: map[string]any{
 			"duration":            60000,
 			"EnvironmentIdOrName": "5f757f0d-de24-462c-867f-256bb696d2dd",
 			"iterations":          2,

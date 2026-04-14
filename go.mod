@@ -1,6 +1,6 @@
 module github.com/steadybit/extension-postman/v2
 
-go 1.25.7
+go 1.26.2
 
 require (
 	github.com/KimMachineGun/automemlimit v0.7.5
