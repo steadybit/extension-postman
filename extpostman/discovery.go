@@ -11,7 +11,6 @@ import (
 	"github.com/steadybit/discovery-kit/go/discovery_kit_commons"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_sdk"
 	"github.com/steadybit/extension-kit/extbuild"
-	"github.com/steadybit/extension-kit/extutil"
 	"github.com/steadybit/extension-postman/v2/config"
 	"time"
 )
@@ -41,7 +40,7 @@ func (d *collectionDiscovery) Describe() discovery_kit_api.DiscoveryDescription 
 	return discovery_kit_api.DiscoveryDescription{
 		Id: targetID,
 		Discover: discovery_kit_api.DescribingEndpointReferenceWithCallInterval{
-			CallInterval: extutil.Ptr("1m"),
+			CallInterval: new("1m"),
 		},
 	}
 }
@@ -50,13 +49,13 @@ func (d *collectionDiscovery) DescribeTarget() discovery_kit_api.TargetDescripti
 	return discovery_kit_api.TargetDescription{
 		Id:      targetID,
 		Version: extbuild.GetSemverVersionStringOrUnknown(),
-		Icon:    extutil.Ptr(icon),
+		Icon:    new(icon),
 
 		// Labels used in the UI
 		Label: discovery_kit_api.PluralLabel{One: "Postman Collection", Other: "Postman Collections"},
 
 		// Category for the targets to appear in
-		Category: extutil.Ptr("postman"),
+		Category: new("postman"),
 
 		// Specify attributes shown in table columns and to be used for sorting
 		Table: discovery_kit_api.Table{

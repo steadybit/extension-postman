@@ -66,15 +66,15 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 		Description: "Integrate a Postman Collection via Postman Cloud API.",
 		Version:     extbuild.GetSemverVersionStringOrUnknown(),
 		Kind:        action_kit_api.Check,
-		Icon:        extutil.Ptr(icon),
-		Technology:  extutil.Ptr("Postman"),
+		Icon:        new(icon),
+		Technology:  new("Postman"),
 
-		TargetSelection: extutil.Ptr(action_kit_api.TargetSelection{
+		TargetSelection: new(action_kit_api.TargetSelection{
 			// The target type this action is for
 			TargetType: targetID,
 			// You can provide a list of target templates to help the user select targets.
 			// A template can be used to pre-fill a selection
-			SelectionTemplates: extutil.Ptr([]action_kit_api.TargetSelectionTemplate{
+			SelectionTemplates: new([]action_kit_api.TargetSelectionTemplate{
 				{
 					Label: "collection name",
 					Query: "postman.collection.name=\"\"",
@@ -90,72 +90,72 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 			{
 				Name:         "duration",
 				Label:        "Estimated duration",
-				DefaultValue: extutil.Ptr("30s"),
-				Description:  extutil.Ptr("As long as you have no timeout in place, the step will run as long as needed. You can set this estimation to size the step in the experiment editor for a better understanding of the time schedule."),
-				Required:     extutil.Ptr(true),
+				DefaultValue: new("30s"),
+				Description:  new("As long as you have no timeout in place, the step will run as long as needed. You can set this estimation to size the step in the experiment editor for a better understanding of the time schedule."),
+				Required:     new(true),
 				Type:         action_kit_api.ActionParameterTypeDuration,
 			},
 			{
 				Name:        "environmentIdOrName",
 				Label:       "Environment ID or Name",
-				Description: extutil.Ptr("UID or unique Name of the Postman Environment"),
-				Required:    extutil.Ptr(false),
+				Description: new("UID or unique Name of the Postman Environment"),
+				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeString,
 			},
 			{
 				Name:        "environment",
 				Label:       "Environment variables",
-				Description: extutil.Ptr("Environment variables which will be passed to your Postman Collection"),
-				Required:    extutil.Ptr(false),
+				Description: new("Environment variables which will be passed to your Postman Collection"),
+				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeKeyValue,
-				Advanced:    extutil.Ptr(true),
+				Advanced:    new(true),
 			},
 			{
 				Name:         "iterations",
 				Label:        "Iterations",
-				Description:  extutil.Ptr("Number of iterations to run the collection"),
-				Required:     extutil.Ptr(false),
+				Description:  new("Number of iterations to run the collection"),
+				Required:     new(false),
 				Type:         action_kit_api.ActionParameterTypeInteger,
-				DefaultValue: extutil.Ptr("1"),
-				Advanced:     extutil.Ptr(true),
+				DefaultValue: new("1"),
+				Advanced:     new(true),
 			},
 			{
 				Name:        "timeout",
 				Label:       "Timeout",
-				Description: extutil.Ptr("The time to wait for the entire collection run to complete execution. Hint: If you hit this timeout, no reports will be generated."),
-				Required:    extutil.Ptr(false),
+				Description: new("The time to wait for the entire collection run to complete execution. Hint: If you hit this timeout, no reports will be generated."),
+				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeDuration,
-				Advanced:    extutil.Ptr(true),
+				Advanced:    new(true),
 			},
 			{
 				Name:        "timeoutRequest",
 				Label:       "Request Timeout",
-				Description: extutil.Ptr("The Request Timeout for each request."),
-				Required:    extutil.Ptr(false),
+				Description: new("The Request Timeout for each request."),
+				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeDuration,
-				Advanced:    extutil.Ptr(true),
+				Advanced:    new(true),
 			},
 			{
 				Name:        "verbose",
 				Label:       "Verbose",
-				Description: extutil.Ptr("Show detailed information of collection run and each request sent."),
-				Required:    extutil.Ptr(false),
+				Description: new("Show detailed information of collection run and each request sent."),
+				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeBoolean,
-				Advanced:    extutil.Ptr(true),
+				Advanced:    new(true),
 			},
 			{
 				Name:        "bail",
 				Label:       "Bail",
-				Description: extutil.Ptr("Stops the runner when a test case fails."),
-				Required:    extutil.Ptr(false),
+				Description: new("Stops the runner when a test case fails."),
+				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeBoolean,
-				Advanced:    extutil.Ptr(true),
+				Advanced:    new(true),
 			},
 		},
 		Prepare: action_kit_api.MutatingEndpointReference{},
 		Start:   action_kit_api.MutatingEndpointReference{},
-		Status:  extutil.Ptr(action_kit_api.MutatingEndpointReferenceWithCallInterval{}),
-		Stop:    extutil.Ptr(action_kit_api.MutatingEndpointReference{}),
+		Status:  new(action_kit_api.MutatingEndpointReferenceWithCallInterval{}),
+		Stop:    new(action_kit_api.MutatingEndpointReference{}),
 	}
 }
 
@@ -233,7 +233,7 @@ func (f PostmanAction) Start(_ context.Context, state *PostmanState) (*action_ki
 	state.CmdStateID = cmdState.Id
 	err := cmd.Start()
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to start command.", err))
+		return nil, new(extension_kit.ToError("Failed to start command.", err))
 	}
 
 	state.Pid = cmd.Process.Pid
@@ -254,7 +254,7 @@ func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_k
 
 	cmdState, err := extcmd.GetCmdState(state.CmdStateID)
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to find command state", err))
+		return nil, new(extension_kit.ToError("Failed to find command state", err))
 	}
 
 	var result action_kit_api.StatusResult
@@ -292,7 +292,7 @@ func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_k
 			var report NewmanJsonReport
 			jsonErr := json.Unmarshal(byteValue, &report)
 			if jsonErr != nil {
-				return nil, extutil.Ptr(extension_kit.ToError("Failed to parse report json", err))
+				return nil, new(extension_kit.ToError("Failed to parse report json", err))
 			}
 			if report.Run.Stats.Assertions != nil && report.Run.Stats.Assertions.Failed > 0 {
 				result.Error = &action_kit_api.ActionKitError{
@@ -313,7 +313,7 @@ func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_k
 	messages := getStdOutMessages(cmdState.GetLines(false))
 	log.Debug().Msgf("Returning %d messages", len(messages))
 
-	result.Messages = extutil.Ptr(messages)
+	result.Messages = new(messages)
 	return &result, nil
 }
 
@@ -332,7 +332,7 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 	var timestamp = state.Timestamp
 	cmdState, err := extcmd.GetCmdState(state.CmdStateID)
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to find command state", err))
+		return nil, new(extension_kit.ToError("Failed to find command state", err))
 	}
 	extcmd.RemoveCmdState(state.CmdStateID)
 
@@ -340,7 +340,7 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 	var pid = state.Pid
 	process, err := os.FindProcess(pid)
 	if err != nil {
-		return nil, extutil.Ptr(extension_kit.ToError("Failed to find process", err))
+		return nil, new(extension_kit.ToError("Failed to find process", err))
 	}
 	_ = process.Kill()
 
@@ -368,7 +368,7 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 	if err == nil { // file exists
 		summaryFileContent, err = extfile.File2Base64(fmt.Sprintf(ResultSummaryFileName, timestamp))
 		if err != nil {
-			return nil, extutil.Ptr(extension_kit.ToError("Failed to open summaryFileContent file", err))
+			return nil, new(extension_kit.ToError("Failed to open summaryFileContent file", err))
 		}
 		artifacts = append(artifacts, action_kit_api.Artifact{
 			Label: "$(experimentKey)_$(executionId)_postman.json",
@@ -383,7 +383,7 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 	if err == nil { // file exists
 		htmlResultFileContent, err = extfile.File2Base64(fmt.Sprintf(ResultFileName, timestamp))
 		if err != nil {
-			return nil, extutil.Ptr(extension_kit.ToError("Failed to open htmlResultFileContent file", err))
+			return nil, new(extension_kit.ToError("Failed to open htmlResultFileContent file", err))
 		}
 		artifacts = append(artifacts, action_kit_api.Artifact{
 			Label: "$(experimentKey)_$(executionId)_postman.html",
@@ -393,7 +393,7 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 
 	log.Debug().Msgf("Returning %d messages", len(messages))
 	return &action_kit_api.StopResult{
-		Artifacts: extutil.Ptr(artifacts),
-		Messages:  extutil.Ptr(messages),
+		Artifacts: new(artifacts),
+		Messages:  new(messages),
 	}, nil
 }
