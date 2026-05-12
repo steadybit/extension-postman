@@ -2,7 +2,7 @@
 
 ## (next)
 
-- Bump Go to 1.26.2
+- Bump Go to 1.26.3
 
 ## v2.0.25
 
