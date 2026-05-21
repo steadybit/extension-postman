@@ -135,3 +135,7 @@ postman:
   apiKey: ""
   # postman.existingSecret -- If defined, will skip secret creation and instead assume that the referenced secret contains the apiKey
   existingSecret: null
+
+discovery:
+  # discovery.group -- Optional group identifier. When set, the extension adds steadybit.group=<value> to every discovered target. Used as an additional matcher in enrichment rules.
+  group: ""
