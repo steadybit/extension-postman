@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.0.28
+
+- build(deps): bump node from 25-alpine to 26-alpine
+- chore: update to go 1.26.4
+- feat: add weekly auto patch-release workflow
+
 ## v2.0.27
 
 - Support discovery group attribute via `STEADYBIT_EXTENSION_DISCOVERY_GROUP` env var (or `discovery.group` Helm value) — when set, the extension adds `steadybit.group=<value>` to every discovered target
