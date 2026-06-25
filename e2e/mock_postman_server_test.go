@@ -26,6 +26,9 @@ func createMockPostmanServer() *httptest.Server {
 			} else if strings.Contains(r.URL.Path, "collections") {
 				w.WriteHeader(http.StatusOK)
 				w.Write(getCollections())
+			} else if strings.Contains(r.URL.Path, "environments/") {
+				w.WriteHeader(http.StatusOK)
+				w.Write(getEnvironment())
 			} else if strings.Contains(r.URL.Path, "environments") {
 				w.WriteHeader(http.StatusOK)
 				w.Write(getEnvironments())
@@ -64,4 +67,9 @@ func getCollections() []byte {
 func getEnvironments() []byte {
 	log.Info().Msg("Return environments")
 	return []byte(`{"environments":[{"id":"70cb2138-3443-4c33-a45c-73477a5fd903","name":"dev","createdAt":"2022-10-04T14:02:50.000Z","updatedAt":"2022-10-05T11:28:57.000Z","owner":"123456","uid":"21211108-11cb2538-1111-1111-a45c-11177a5fd903","isPublic":false}]}`)
+}
+
+func getEnvironment() []byte {
+	log.Info().Msg("Return environment")
+	return []byte(`{"environment":{"id":"70cb2138-3443-4c33-a45c-73477a5fd903","name":"dev","values":[{"key":"foo","value":"bar","enabled":true}]}}`)
 }

@@ -9,18 +9,53 @@ package extpostman
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strings"
+	"testing"
+
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
 	"github.com/steadybit/extension-kit/extutil"
 	"github.com/steadybit/extension-postman/v2/config"
-	"github.com/steadybit/extension-postman/v2/utils"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
+	"github.com/stretchr/testify/require"
 )
 
+func newPostmanApiStub(t *testing.T) *httptest.Server {
+	t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// The API key must be passed via the header, never as a query parameter.
+		assert.Equal(t, "123456", r.Header.Get("X-API-Key"))
+		assert.Empty(t, r.URL.Query().Get("apikey"))
+
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/collections/"):
+			_, _ = w.Write([]byte(`{"collection":{"info":{"name":"test"},"item":[]}}`))
+		case strings.HasPrefix(r.URL.Path, "/environments/"):
+			_, _ = w.Write([]byte(`{"environment":{"id":"5f757f0d-de24-462c-867f-256bb696d2dd","name":"env","values":[]}}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(server.Close)
+	return server
+}
+
+func assertNoSecretInCommand(t *testing.T, command []string) {
+	t.Helper()
+	for _, arg := range command {
+		assert.NotContains(t, arg, "123456", "api key must not appear in the command")
+		assert.NotContains(t, arg, "apikey", "apikey query parameter must not appear in the command")
+	}
+}
+
 func TestPrepareCollectionRun(t *testing.T) {
-	os.Setenv("STEADYBIT_EXTENSION_POSTMAN_API_KEY", "123456")
+	server := newPostmanApiStub(t)
+	t.Setenv("STEADYBIT_EXTENSION_POSTMAN_API_KEY", "123456")
+	t.Setenv("STEADYBIT_EXTENSION_POSTMAN_BASE_URL", server.URL)
 	config.ParseConfiguration()
+
 	// Given
 	requestBody := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]any{
@@ -47,27 +82,41 @@ func TestPrepareCollectionRun(t *testing.T) {
 
 	// When
 	result, err := action.Prepare(context.TODO(), &state, requestBody)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = os.RemoveAll(state.WorkDir) })
 
 	// Then
-	assert.Nil(t, err)
 	assert.Nil(t, result)
+	assertNoSecretInCommand(t, state.Command)
 	assert.Equal(t, "newman", state.Command[0])
-	assert.Equal(t, []string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/5f757f0d-de24-462c-867f-256bb696d2dd?apikey=123456", "--env-var", "Test1=foo", "--env-var", "Test2=bar", "--bail", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "--reporter-htmlextra-export", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}, utils.RemoveAtIndex(utils.RemoveAtIndex(state.Command, 17), 18))
+	assert.Equal(t, "run", state.Command[1])
+	assert.True(t, strings.HasPrefix(state.Command[2], state.WorkDir))
+	assert.True(t, strings.HasSuffix(state.Command[2], "collection.json"))
+
+	// the collection and environment are downloaded to local files, not fetched by newman via url
+	assert.FileExists(t, state.Command[2])
+	assert.Contains(t, state.Command, "--environment")
+	assert.Contains(t, state.Command, "--env-var")
+	assert.Contains(t, state.Command, "Test1=foo")
+	assert.Contains(t, state.Command, "--bail")
+	assert.Contains(t, state.Command, "-n")
 }
 
 func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
-	os.Setenv("STEADYBIT_EXTENSION_POSTMAN_API_KEY", "123456")
+	server := newPostmanApiStub(t)
+	t.Setenv("STEADYBIT_EXTENSION_POSTMAN_API_KEY", "123456")
+	t.Setenv("STEADYBIT_EXTENSION_POSTMAN_BASE_URL", server.URL)
 	config.ParseConfiguration()
+
 	// Given
 	requestBody := extutil.JsonMangle(action_kit_api.PrepareActionRequestBody{
 		Config: map[string]any{
-			"duration":            60000,
-			"EnvironmentIdOrName": "5f757f0d-de24-462c-867f-256bb696d2dd",
-			"iterations":          2,
-			"environment":         []map[string]string{},
-			"timeout":             30000,
-			"timeoutRequest":      30000,
-			"verbose":             true,
+			"duration":       60000,
+			"iterations":     2,
+			"environment":    []map[string]string{},
+			"timeout":        30000,
+			"timeoutRequest": 30000,
+			"verbose":        true,
 		},
 		Target: &action_kit_api.Target{
 			Attributes: map[string][]string{
@@ -80,10 +129,15 @@ func TestPrepareCollectionRunWithEmptyEnvironment(t *testing.T) {
 
 	// When
 	result, err := action.Prepare(context.TODO(), &state, requestBody)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = os.RemoveAll(state.WorkDir) })
 
 	// Then
-	assert.Nil(t, err)
 	assert.Nil(t, result)
+	assertNoSecretInCommand(t, state.Command)
 	assert.Equal(t, "newman", state.Command[0])
-	assert.Equal(t, []string{"newman", "run", "https://api.getpostman.com/collections/645797?apikey=123456", "--environment", "https://api.getpostman.com/environments/5f757f0d-de24-462c-867f-256bb696d2dd?apikey=123456", "--verbose", "--timeout", "30000", "--timeout-request", "30000", "--reporters", "cli,json-summary,htmlextra", "--reporter-summary-json-export", "--reporter-htmlextra-export", "--reporter-htmlextra-omitResponseBodies", "-n", "2"}, utils.RemoveAtIndex(utils.RemoveAtIndex(state.Command, 13), 14))
+	assert.Equal(t, "run", state.Command[1])
+	assert.True(t, strings.HasSuffix(state.Command[2], "collection.json"))
+	assert.NotContains(t, state.Command, "--environment")
+	assert.Contains(t, state.Command, "--verbose")
 }
