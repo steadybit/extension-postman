@@ -3,13 +3,10 @@ package extpostman
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	"github.com/steadybit/extension-kit/extbuild"
-	"github.com/steadybit/extension-postman/v2/config"
-	"io"
-	"net/http"
-	"net/url"
 )
 
 type PostmanEnvironmentResult struct {
@@ -18,6 +15,11 @@ type PostmanEnvironmentResult struct {
 type PostmanEnvironment struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
+}
+
+// DownloadEnvironment fetches the environment from the Postman API and writes it to destPath.
+func DownloadEnvironment(environmentId, destPath string) error {
+	return downloadPostmanResource("environments", environmentId, "environment", destPath)
 }
 
 func GetPostEnvironmentId(environmentIdOrName string) (string, error) {
@@ -50,25 +52,13 @@ func GetPostEnvironmentId(environmentIdOrName string) (string, error) {
 }
 
 func GetPostmanEnvironments() []PostmanEnvironment {
-	var specification = config.Config
-	var apiKey = specification.PostmanApiKey
-	environmentsUrl, err := url.Parse(specification.PostmanBaseUrl)
+	req, err := newPostmanApiRequest("environments")
 	if err != nil {
-		log.Error().Msgf("Failed to parse postman base url. Got error: %s", err)
+		log.Error().Msgf("Failed to create request for postman api. Got error: %s", err)
 		return nil
 	}
 
-	client := &http.Client{}
-	environmentsUrl.Path += "/environments"
-	req, err := http.NewRequest("GET", environmentsUrl.String(), nil)
-	if err != nil {
-		return nil
-	}
-	req.Header.Add("X-API-Key", apiKey)
-	req.Header.Add("Accept", "*/*")
-	req.Header.Add("User-Agent", fmt.Sprintf("steadybit-extension-postman/%s", extbuild.GetSemverVersionStringOrUnknown()))
-
-	response, err := client.Do(req)
+	response, err := postmanHttpClient.Do(req)
 	if err != nil {
 		log.Error().Msgf("Failed to get Environments from postman api. Got error: %s", err)
 		return nil

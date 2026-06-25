@@ -178,10 +178,15 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw actio
 		return nil, extension_kit.ToError("Failed to create working directory.", err)
 	}
 	state.WorkDir = workDir
+	prepareSucceeded := false
+	defer func() {
+		if !prepareSucceeded {
+			_ = os.RemoveAll(workDir)
+		}
+	}()
 
 	collectionFile := filepath.Join(workDir, "collection.json")
 	if err := DownloadCollection(collectionId, collectionFile); err != nil {
-		_ = os.RemoveAll(workDir)
 		return nil, extension_kit.ToError("Failed to download collection.", err)
 	}
 
@@ -190,12 +195,10 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw actio
 	if request.EnvironmentIdOrName != "" {
 		environmentId, err := GetPostEnvironmentId(request.EnvironmentIdOrName)
 		if err != nil {
-			_ = os.RemoveAll(workDir)
 			return nil, extension_kit.ToError("Failed to get environment id.", err)
 		}
 		environmentFile := filepath.Join(workDir, "environment.json")
 		if err := DownloadEnvironment(environmentId, environmentFile); err != nil {
-			_ = os.RemoveAll(workDir)
 			return nil, extension_kit.ToError("Failed to download environment.", err)
 		}
 		state.Command = append(state.Command, "--environment", environmentFile)
@@ -230,6 +233,7 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw actio
 		state.Command = append(state.Command, "-n", fmt.Sprintf("%d", request.Iterations))
 	}
 	log.Info().Msgf("Prepared action. Command: %s", strings.Join(state.Command, " "))
+	prepareSucceeded = true
 	return nil, nil
 }
 
@@ -336,13 +340,12 @@ func getStdOutMessages(lines []string) []action_kit_api.Message {
 }
 
 func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit_api.StopResult, error) {
-	if state.WorkDir != "" {
-		defer func() {
-			if rerr := os.RemoveAll(state.WorkDir); rerr != nil {
-				log.Warn().Msgf("Failed to remove working directory %s: %s", state.WorkDir, rerr)
-			}
-		}()
-	}
+	// os.RemoveAll("") is a no-op, so this is safe even if Prepare never set WorkDir.
+	defer func() {
+		if rerr := os.RemoveAll(state.WorkDir); rerr != nil {
+			log.Warn().Msgf("Failed to remove working directory %s: %s", state.WorkDir, rerr)
+		}
+	}()
 
 	cmdState, err := extcmd.GetCmdState(state.CmdStateID)
 	if err != nil {
