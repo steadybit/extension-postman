@@ -82,6 +82,8 @@ func downloadPostmanResource(resourcePath, id, wrapperKey, destPath string) erro
 	if err := json.Unmarshal(body, &wrapper); err == nil {
 		if inner, ok := wrapper[wrapperKey]; ok {
 			content = inner
+		} else {
+			log.Warn().Msgf("Postman API response for %s/%s did not contain expected wrapper key %q; using raw body", resourcePath, id, wrapperKey)
 		}
 	}
 
