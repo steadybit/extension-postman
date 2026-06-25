@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
@@ -22,7 +22,6 @@ import (
 	"github.com/steadybit/extension-kit/extconversion"
 	"github.com/steadybit/extension-kit/extfile"
 	"github.com/steadybit/extension-kit/extutil"
-	"github.com/steadybit/extension-postman/v2/config"
 )
 
 type PostmanAction struct {
@@ -32,7 +31,7 @@ type PostmanState struct {
 	Command         []string `json:"command"`
 	Pid             int      `json:"pid"`
 	CmdStateID      string   `json:"cmdStateId"`
-	Timestamp       string   `json:"timestamp"`
+	WorkDir         string   `json:"workDir"`
 	StdOutLineCount int      `json:"stdOutLineCount"`
 }
 
@@ -164,7 +163,6 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw actio
 	if err := extconversion.Convert(raw.Config, &request); err != nil {
 		return nil, extension_kit.ToError("Failed to unmarshal the config.", err)
 	}
-	config := config.Config
 
 	collectionIds := raw.Target.Attributes["postman.collection.id"]
 	if len(collectionIds) == 0 {
@@ -175,19 +173,32 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw actio
 	}
 	var collectionId = collectionIds[0]
 
-	state.Timestamp = time.Now().Format(time.RFC3339)
-	state.Command = []string{
-		"newman",
-		"run",
-		fmt.Sprintf("%s/collections/%s?apikey=%s", config.PostmanBaseUrl, collectionId, config.PostmanApiKey),
+	workDir, err := os.MkdirTemp("", "steadybit-postman-*")
+	if err != nil {
+		return nil, extension_kit.ToError("Failed to create working directory.", err)
 	}
+	state.WorkDir = workDir
+
+	collectionFile := filepath.Join(workDir, "collection.json")
+	if err := DownloadCollection(collectionId, collectionFile); err != nil {
+		_ = os.RemoveAll(workDir)
+		return nil, extension_kit.ToError("Failed to download collection.", err)
+	}
+
+	state.Command = []string{"newman", "run", collectionFile}
+
 	if request.EnvironmentIdOrName != "" {
-		environmentId, error := GetPostEnvironmentId(request.EnvironmentIdOrName)
-		if error != nil {
-			return nil, extension_kit.ToError("Failed to get environment id.", error)
+		environmentId, err := GetPostEnvironmentId(request.EnvironmentIdOrName)
+		if err != nil {
+			_ = os.RemoveAll(workDir)
+			return nil, extension_kit.ToError("Failed to get environment id.", err)
 		}
-		state.Command = append(state.Command, "--environment")
-		state.Command = append(state.Command, fmt.Sprintf("%s/environments/%s?apikey=%s", config.PostmanBaseUrl, environmentId, config.PostmanApiKey))
+		environmentFile := filepath.Join(workDir, "environment.json")
+		if err := DownloadEnvironment(environmentId, environmentFile); err != nil {
+			_ = os.RemoveAll(workDir)
+			return nil, extension_kit.ToError("Failed to download environment.", err)
+		}
+		state.Command = append(state.Command, "--environment", environmentFile)
 	}
 	if request.Environment != nil {
 		for _, value := range request.Environment {
@@ -202,27 +213,23 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw actio
 		state.Command = append(state.Command, "--bail")
 	}
 	if request.Timeout > 0 {
-		state.Command = append(state.Command, "--timeout")
-		state.Command = append(state.Command, fmt.Sprintf("%d", request.Timeout))
+		state.Command = append(state.Command, "--timeout", fmt.Sprintf("%d", request.Timeout))
 	}
 	if request.TimeoutRequest > 0 {
-		state.Command = append(state.Command, "--timeout-request")
-		state.Command = append(state.Command, fmt.Sprintf("%d", request.TimeoutRequest))
+		state.Command = append(state.Command, "--timeout-request", fmt.Sprintf("%d", request.TimeoutRequest))
 	}
 
-	state.Command = append(state.Command, "--reporters")
-	state.Command = append(state.Command, "cli,json-summary,htmlextra")
-	state.Command = append(state.Command, "--reporter-summary-json-export")
-	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result-summary_%s.json", state.Timestamp))
-	state.Command = append(state.Command, "--reporter-htmlextra-export")
-	state.Command = append(state.Command, fmt.Sprintf("/tmp/newman-result_%s.html", state.Timestamp))
-	state.Command = append(state.Command, "--reporter-htmlextra-omitResponseBodies")
+	state.Command = append(state.Command,
+		"--reporters", "cli,json-summary,htmlextra",
+		"--reporter-summary-json-export", filepath.Join(workDir, "result-summary.json"),
+		"--reporter-htmlextra-export", filepath.Join(workDir, "result.html"),
+		"--reporter-htmlextra-omitResponseBodies",
+	)
 
 	if request.Iterations > 1 {
-		state.Command = append(state.Command, "-n")
-		state.Command = append(state.Command, fmt.Sprintf("%d", request.Iterations))
+		state.Command = append(state.Command, "-n", fmt.Sprintf("%d", request.Iterations))
 	}
-	log.Info().Msgf("Prepared action. Command: %s", extutil.MaskString(strings.Join(state.Command, " "), config.PostmanApiKey, 4))
+	log.Info().Msgf("Prepared action. Command: %s", strings.Join(state.Command, " "))
 	return nil, nil
 }
 
@@ -285,7 +292,7 @@ func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_k
 		}
 
 		// check if summary file and try to check if it is a failure
-		resultSummaryFileName := fmt.Sprintf("/tmp/newman-result-summary_%s.json", state.Timestamp)
+		resultSummaryFileName := filepath.Join(state.WorkDir, "result-summary.json")
 		_, err = os.Stat(resultSummaryFileName)
 		if err == nil { // file exists
 			byteValue, _ := os.ReadFile(resultSummaryFileName)
@@ -329,7 +336,14 @@ func getStdOutMessages(lines []string) []action_kit_api.Message {
 }
 
 func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit_api.StopResult, error) {
-	var timestamp = state.Timestamp
+	if state.WorkDir != "" {
+		defer func() {
+			if rerr := os.RemoveAll(state.WorkDir); rerr != nil {
+				log.Warn().Msgf("Failed to remove working directory %s: %s", state.WorkDir, rerr)
+			}
+		}()
+	}
+
 	cmdState, err := extcmd.GetCmdState(state.CmdStateID)
 	if err != nil {
 		return nil, new(extension_kit.ToError("Failed to find command state", err))
@@ -362,11 +376,11 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 	artifacts := make([]action_kit_api.Artifact, 0)
 
 	// check if summary file exists and send it as artifact
-	const ResultSummaryFileName = "/tmp/newman-result-summary_%s.json"
-	_, err = os.Stat(fmt.Sprintf(ResultSummaryFileName, timestamp))
+	resultSummaryFileName := filepath.Join(state.WorkDir, "result-summary.json")
+	_, err = os.Stat(resultSummaryFileName)
 
 	if err == nil { // file exists
-		summaryFileContent, err = extfile.File2Base64(fmt.Sprintf(ResultSummaryFileName, timestamp))
+		summaryFileContent, err = extfile.File2Base64(resultSummaryFileName)
 		if err != nil {
 			return nil, new(extension_kit.ToError("Failed to open summaryFileContent file", err))
 		}
@@ -377,11 +391,11 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 	}
 
 	// check if html result file exists and send it as artifact
-	const ResultFileName = "/tmp/newman-result_%s.html"
-	_, err = os.Stat(fmt.Sprintf(ResultFileName, timestamp))
+	resultFileName := filepath.Join(state.WorkDir, "result.html")
+	_, err = os.Stat(resultFileName)
 
 	if err == nil { // file exists
-		htmlResultFileContent, err = extfile.File2Base64(fmt.Sprintf(ResultFileName, timestamp))
+		htmlResultFileContent, err = extfile.File2Base64(resultFileName)
 		if err != nil {
 			return nil, new(extension_kit.ToError("Failed to open htmlResultFileContent file", err))
 		}
