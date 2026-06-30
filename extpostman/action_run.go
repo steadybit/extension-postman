@@ -249,7 +249,7 @@ func (f PostmanAction) Start(_ context.Context, state *PostmanState) (*action_ki
 
 	state.Pid = cmd.Process.Pid
 	go func() {
-		cmdErr := cmd.Wait()
+		cmdErr := cmdState.Wait()
 		if cmdErr != nil {
 			log.Error().Msgf("Failed to execute postman action: %s", cmdErr)
 		}
@@ -271,7 +271,7 @@ func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_k
 	var result action_kit_api.StatusResult
 
 	// check if postman is still running
-	exitCode := cmdState.Cmd.ProcessState.ExitCode()
+	exitCode := cmdState.ExitCode()
 	if exitCode == -1 {
 		log.Info().Msgf("Postman is still running")
 
@@ -365,7 +365,7 @@ func (f PostmanAction) Stop(_ context.Context, state *PostmanState) (*action_kit
 	messages := getStdOutMessages(cmdState.GetLines(true))
 
 	// read return code and send it as Message
-	exitCode := cmdState.Cmd.ProcessState.ExitCode()
+	exitCode := cmdState.ExitCode()
 	if exitCode != 0 && exitCode != -1 {
 		messages = append(messages, action_kit_api.Message{
 			Level:   extutil.Ptr(action_kit_api.Error),
