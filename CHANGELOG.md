@@ -4,6 +4,7 @@
 
 - fix: authenticate against the Postman API with the `X-API-Key` header and download the collection/environment in-process instead of embedding the API key in the newman command line and serialized action state (prevents leaking the key via `ps`/`/proc/<pid>/cmdline`)
 - fix: write newman reports into a unique per-execution working directory (mode 0700) and remove it on stop, instead of timestamped world-readable files in `/tmp` that could collide between concurrent runs and were never cleaned up
+- fix: resolve the data race on the newman process exit code between the process-reaping goroutine and the status/stop handlers (via `extcmd.CmdState.Wait`/`ExitCode`)
 
 ## v2.0.29
 
