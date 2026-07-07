@@ -1,10 +1,18 @@
 # Changelog
 
-## Unreleased
+## v2.0.30
 
+- build(deps): bump github.com/steadybit/action-kit/go/action_kit_sdk
+- build(deps): bump github.com/steadybit/discovery-kit/go/discovery_kit_sdk
+- build(deps): bump github.com/steadybit/extension-kit
+- chore: add Claude Code workflows (#137)
+- chore: normalize dependabot-auto-merge workflow to the standard version (#140)
+- chore: silence SonarQube finding on secrets: inherit in Claude workflows
 - fix: authenticate against the Postman API with the `X-API-Key` header and download the collection/environment in-process instead of embedding the API key in the newman command line and serialized action state (prevents leaking the key via `ps`/`/proc/<pid>/cmdline`)
-- fix: write newman reports into a unique per-execution working directory (mode 0700) and remove it on stop, instead of timestamped world-readable files in `/tmp` that could collide between concurrent runs and were never cleaned up
+- fix: resolve data race on the process exit code (#139)
 - fix: resolve the data race on the newman process exit code between the process-reaping goroutine and the status/stop handlers (via `extcmd.CmdState.Wait`/`ExitCode`)
+- fix: stop leaking Postman API key via newman command line (#138)
+- fix: write newman reports into a unique per-execution working directory (mode 0700) and remove it on stop, instead of timestamped world-readable files in `/tmp` that could collide between concurrent runs and were never cleaned up
 
 ## v2.0.29
 
