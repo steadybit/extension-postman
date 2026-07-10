@@ -4,8 +4,6 @@
 package main
 
 import (
-	"time"
-
 	_ "github.com/KimMachineGun/automemlimit" // By default, it sets `GOMEMLIMIT` to 90% of cgroup's memory limit.
 	"github.com/rs/zerolog"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
@@ -22,8 +20,6 @@ import (
 	"github.com/steadybit/extension-postman/v2/extpostman"
 )
 
-var startedAt = time.Now().Format(time.RFC3339)
-
 func main() {
 	config.ParseConfiguration()
 
@@ -37,7 +33,7 @@ func main() {
 	action_kit_sdk.RegisterAction(extpostman.NewPostmanAction())
 	extsignals.ActivateSignalHandlers()
 
-	exthttp.RegisterHttpHandler("/", exthttp.IfNoneMatchHandler(func() string { return startedAt }, exthttp.GetterAsHandler(getExtensionList)))
+	exthttp.RegisterRevisionedHandler("/", getExtensionList)
 	exthttp.Listen(exthttp.ListenOpts{
 		Port: 8086,
 	})
