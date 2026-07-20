@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.32
+
+- ci: skip build on .trivyignore.yml-only changes [skip ci]
+
 ## v2.0.31
 
 - chore(deps): bump go to 1.26.5 (#144)
