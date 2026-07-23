@@ -48,7 +48,7 @@ RUN echo "$VERSION" > /version.txt && echo "$REVISION" > /revision.txt
 
 ENV LC_ALL="en_US.UTF-8" LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" ALPINE_NODE_REPO="oznu/alpine-node"
 
-RUN npm install -g --ignore-scripts npm@11.17.0 && \
+RUN npm install -g --ignore-scripts npm@11.18.0 && \
     npm install -g --ignore-scripts newman@6.2.2 newman-reporter-json-summary@1.0.14 newman-reporter-htmlextra@1.23.1
 
 ARG USERNAME=steadybit
