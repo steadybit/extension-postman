@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.0.33
+
+- chore(deps): update dependencies
+- fix: bump bundled npm to 11.18.0 to resolve tar and brace-expansion CVEs
+
 ## v2.0.32
 
 - ci: skip build on .trivyignore.yml-only changes [skip ci]
