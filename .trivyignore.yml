@@ -53,3 +53,6 @@ vulnerabilities:
   - id: CVE-2026-69192
     statement: Waiting for an updated npm version
     expired_at: 2027-01-01
+  - id: CVE-2026-73231
+    statement: faker bundled transitively via newman; waiting for upstream fix
+    expired_at: 2027-02-01
