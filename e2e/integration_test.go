@@ -4,10 +4,13 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/steadybit/action-kit/go/action_kit_api/v2"
+	"github.com/steadybit/action-kit/go/action_kit_test/client"
 	"github.com/steadybit/action-kit/go/action_kit_test/e2e"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_api"
 	"github.com/steadybit/discovery-kit/go/discovery_kit_test/validate"
@@ -81,6 +84,24 @@ func testDiscovery(t *testing.T, _ *e2e.Minikube, e *e2e.Extension) {
 	assert.Equal(t, target.Attributes["postman.collection.id"], []string{collectionId})
 }
 
+// assertPostmanArtifacts checks the two files a finished collection run hands back.
+func assertPostmanArtifacts(t *testing.T, exec client.ActionExecution) {
+	t.Helper()
+	artifacts := make(map[string][]byte)
+	for _, artifact := range exec.Artifacts() {
+		data, err := base64.StdEncoding.DecodeString(artifact.Data)
+		require.NoError(t, err, "artifact %s must be valid base64", artifact.Label)
+		artifacts[artifact.Label] = data
+	}
+
+	require.Contains(t, artifacts, "$(experimentKey)_$(executionId)_postman.json")
+	require.Contains(t, artifacts, "$(experimentKey)_$(executionId)_postman.html")
+	assert.True(t, bytes.HasPrefix(artifacts["$(experimentKey)_$(executionId)_postman.json"], []byte("{")),
+		"the summary artifact must be the json newman wrote")
+	assert.Contains(t, string(artifacts["$(experimentKey)_$(executionId)_postman.html"]), "<html",
+		"the report artifact must be the html newman wrote")
+}
+
 func testRunPostman(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
 	config := struct {
 	}{}
@@ -95,7 +116,10 @@ func testRunPostman(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
 	require.NoError(t, err)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
-	require.NoError(t, exec.Cancel())
+	// Stop kills newman and then only attaches result files it finds, so cancelling here could hand
+	// back nothing.
+	require.NoError(t, exec.Wait())
+	assertPostmanArtifacts(t, exec)
 }
 
 func testRunPostmanWithEnvId(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
@@ -116,7 +140,10 @@ func testRunPostmanWithEnvId(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "--environment", 90*time.Second)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
-	require.NoError(t, exec.Cancel())
+	// Stop kills newman and then only attaches result files it finds, so cancelling here could hand
+	// back nothing.
+	require.NoError(t, exec.Wait())
+	assertPostmanArtifacts(t, exec)
 }
 
 func testRunPostmanWithEnvName(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
@@ -137,5 +164,8 @@ func testRunPostmanWithEnvName(t *testing.T, m *e2e.Minikube, e *e2e.Extension) 
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "--environment", 90*time.Second)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
 	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
-	require.NoError(t, exec.Cancel())
+	// Stop kills newman and then only attaches result files it finds, so cancelling here could hand
+	// back nothing.
+	require.NoError(t, exec.Wait())
+	assertPostmanArtifacts(t, exec)
 }
