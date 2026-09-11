@@ -1,11 +1,9 @@
 package extpostman
 
 import (
+	"context"
 	"encoding/json"
-	"io"
-	"net/http"
-
-	"github.com/rs/zerolog/log"
+	"fmt"
 )
 
 type PostmanCollectionResult struct {
@@ -17,41 +15,19 @@ type PostmanCollection struct {
 }
 
 // DownloadCollection fetches the collection from the Postman API and writes it to destPath.
-func DownloadCollection(collectionId, destPath string) error {
-	return downloadPostmanResource("collections", collectionId, "collection", destPath)
+func DownloadCollection(ctx context.Context, collectionId, destPath string) error {
+	return downloadPostmanResource(ctx, "collections", collectionId, "collection", destPath)
 }
 
-func GetPostmanCollections() []PostmanCollection {
-	req, err := newPostmanApiRequest("collections")
+func GetPostmanCollections(ctx context.Context) ([]PostmanCollection, error) {
+	body, err := getPostmanApiResource(ctx, "collections")
 	if err != nil {
-		log.Error().Msgf("Failed to create request for postman api. Got error: %s", err)
-		return nil
+		return nil, err
 	}
-
-	response, err := postmanHttpClient.Do(req)
-	if err != nil {
-		log.Error().Msgf("Failed to get collections from postman api. Got error: %s", err)
-		return nil
-	}
-	if response.StatusCode != http.StatusOK {
-		log.Error().Msgf("Failed to get collections from postman api. Got status code: %s", response.Status)
-		return nil
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Error().Msgf("Failed to close response body. Got error: %s", err)
-			return
-		}
-	}(response.Body)
 
 	var result PostmanCollectionResult
-	err = json.NewDecoder(response.Body).Decode(&result)
-	if err != nil {
-		log.Error().Msgf("Failed to decode response body. Got error: %s", err)
-		return nil
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode collections response: %w", err)
 	}
-
-	return result.Collections
+	return result.Collections, nil
 }

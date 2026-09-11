@@ -158,7 +158,7 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 	}
 }
 
-func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw action_kit_api.PrepareActionRequestBody) (*action_kit_api.PrepareResult, error) {
+func (f PostmanAction) Prepare(ctx context.Context, state *PostmanState, raw action_kit_api.PrepareActionRequestBody) (*action_kit_api.PrepareResult, error) {
 	var request PostmanConfig
 	if err := extconversion.Convert(raw.Config, &request); err != nil {
 		return nil, extension_kit.ToError("Failed to unmarshal the config.", err)
@@ -173,6 +173,12 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw actio
 	}
 	var collectionId = collectionIds[0]
 
+	// The agent bounds this call via the Request-Timeout header. Keep all Postman API work
+	// inside a fraction of that budget so a slow Postman API is reported as such, instead of
+	// running past the handler timeout and reaching the platform as an opaque 503 "Timeout".
+	apiCtx, cancelApiCtx := PostmanApiContext(ctx)
+	defer cancelApiCtx()
+
 	workDir, err := os.MkdirTemp("", "steadybit-postman-*")
 	if err != nil {
 		return nil, extension_kit.ToError("Failed to create working directory.", err)
@@ -186,19 +192,19 @@ func (f PostmanAction) Prepare(_ context.Context, state *PostmanState, raw actio
 	}()
 
 	collectionFile := filepath.Join(workDir, "collection.json")
-	if err := DownloadCollection(collectionId, collectionFile); err != nil {
+	if err := DownloadCollection(apiCtx, collectionId, collectionFile); err != nil {
 		return nil, extension_kit.ToError("Failed to download collection.", err)
 	}
 
 	state.Command = []string{"newman", "run", collectionFile}
 
 	if request.EnvironmentIdOrName != "" {
-		environmentId, err := GetPostEnvironmentId(request.EnvironmentIdOrName)
+		environmentId, err := GetPostEnvironmentId(apiCtx, request.EnvironmentIdOrName)
 		if err != nil {
 			return nil, extension_kit.ToError("Failed to get environment id.", err)
 		}
 		environmentFile := filepath.Join(workDir, "environment.json")
-		if err := DownloadEnvironment(environmentId, environmentFile); err != nil {
+		if err := DownloadEnvironment(apiCtx, environmentId, environmentFile); err != nil {
 			return nil, extension_kit.ToError("Failed to download environment.", err)
 		}
 		state.Command = append(state.Command, "--environment", environmentFile)
@@ -275,7 +281,8 @@ func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_k
 	if exitCode == -1 {
 		log.Info().Msgf("Postman is still running")
 
-		//Check if the process is still running and not killed by signal
+		// An exit code of -1 means either "still running" or "terminated by a signal", so probe
+		// the process to tell those apart.
 		err = cmdState.Cmd.Process.Signal(syscall.Signal(0))
 		if err != nil {
 			log.Info().Msgf("Postman is not running anymore.")
@@ -284,8 +291,9 @@ func (f PostmanAction) Status(_ context.Context, state *PostmanState) (*action_k
 				Title:  "Postman process is not running anymore.",
 			}
 			result.Completed = true
+		} else {
+			result.Completed = false
 		}
-		result.Completed = false
 	} else if exitCode == 0 {
 		log.Info().Msgf("Postman run completed successfully")
 		result.Completed = true
