@@ -21,6 +21,8 @@ Postman_Api_Key
 |---------------------------------------|------------------------|-------------------------------------------------------------|----------|---------|
 | `HTTPS_PROXY`                         | via extraEnv variables | Configure the proxy to be used for Postman communication.   | no       |         |
 | `STEADYBIT_EXTENSION_POSTMAN_API_KEY` | postman.apiKey         | Configure the api-key to be used for Postman communication. | yes      |         |
+| `STEADYBIT_EXTENSION_POSTMAN_API_TIMEOUT` | via extraEnv variables | Timeout for a single attempt against the Postman API. Keep it well below the request budget the agent advertises via the `Request-Timeout` header (28s with agent defaults). | no | `8s` |
+| `STEADYBIT_EXTENSION_POSTMAN_API_MAX_ATTEMPTS` | via extraEnv variables | Attempts per Postman API call (first try plus retries) before giving up. Network errors, `429` and `5xx` are retried; attempts stop early once the budget is spent. | no | `3` |
 
 Beyond the settings above, this extension supports the configuration common to all Steadybit
 extensions:

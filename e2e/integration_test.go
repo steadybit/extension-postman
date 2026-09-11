@@ -17,6 +17,7 @@ import (
 	"github.com/steadybit/extension-kit/extlogging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -62,6 +63,18 @@ func TestWithMinikube(t *testing.T) {
 		{
 			Name: "run postman with env id",
 			Test: testRunPostmanWithEnvId,
+		},
+		{
+			Name: "prepare reports a stalling postman api inside the request budget",
+			Test: func(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
+				testPrepareReportsStallingPostmanApi(t, m, e, server)
+			},
+		},
+		{
+			Name: "run postman retrying a transient postman api failure",
+			Test: func(t *testing.T, m *e2e.Minikube, e *e2e.Extension) {
+				testRunPostmanRetriesTransientApiFailure(t, m, e, server)
+			},
 		},
 	})
 }
@@ -168,4 +181,50 @@ func testRunPostmanWithEnvName(t *testing.T, m *e2e.Minikube, e *e2e.Extension) 
 	// back nothing.
 	require.NoError(t, exec.Wait())
 	assertPostmanArtifacts(t, exec)
+}
+
+// testPrepareReportsStallingPostmanApi covers the failure that made the nightly Postman
+// experiment flaky: while the Postman API stalls, prepare has to give up inside the request
+// budget the agent advertises and report the actual cause. Overrunning that budget lets the
+// handler timeout answer instead, and all the platform then records is
+// "503 Service Unavailable ... Timeout".
+func testPrepareReportsStallingPostmanApi(t *testing.T, _ *e2e.Minikube, e *e2e.Extension, server *mockPostmanServer) {
+	const requestBudget = 10 * time.Second
+	e.Client.SetHeader("Request-Timeout", strconv.Itoa(int(requestBudget.Seconds())))
+	t.Cleanup(func() { e.Client.Header.Del("Request-Timeout") })
+
+	server.stall.Store(true)
+	t.Cleanup(func() { server.stall.Store(false) })
+
+	target := action_kit_api.Target{
+		Attributes: map[string][]string{
+			"postman.collection.id": {collectionId},
+		},
+	}
+
+	_, err := e.RunAction("com.steadybit.extension_postman.collection.run", &target, struct{}{}, nil)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Failed to download collection", "the real cause has to reach the caller")
+	assert.NotContains(t, err.Error(), "503", "prepare must not be cut off by the handler timeout")
+}
+
+// testRunPostmanRetriesTransientApiFailure asserts that a single 5xx from the Postman API is
+// retried instead of failing the whole experiment.
+func testRunPostmanRetriesTransientApiFailure(t *testing.T, m *e2e.Minikube, e *e2e.Extension, server *mockPostmanServer) {
+	server.failNextCollectionRequests.Store(1)
+	t.Cleanup(func() { server.failNextCollectionRequests.Store(0) })
+
+	target := action_kit_api.Target{
+		Attributes: map[string][]string{
+			"postman.collection.id": {collectionId},
+		},
+	}
+
+	exec, err := e.RunAction("com.steadybit.extension_postman.collection.run", &target, struct{}{}, nil)
+	require.NoError(t, err, "a transient postman api failure must be retried, not fail the action")
+	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Transient failure calling the postman api", 30*time.Second)
+	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Starting newman!", 90*time.Second)
+	e2e.AssertLogContainsWithTimeout(t, m, e.Pod, "Postman run completed successfully", 210*time.Second)
+	require.NoError(t, exec.Cancel())
 }

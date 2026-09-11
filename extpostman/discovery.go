@@ -92,8 +92,14 @@ func (d *collectionDiscovery) DescribeAttributes() []discovery_kit_api.Attribute
 	}
 }
 
-func (d *collectionDiscovery) DiscoverTargets(_ context.Context) ([]discovery_kit_api.Target, error) {
-	collections := GetPostmanCollections()
+func (d *collectionDiscovery) DiscoverTargets(ctx context.Context) ([]discovery_kit_api.Target, error) {
+	apiCtx, cancel := PostmanApiContext(ctx)
+	defer cancel()
+
+	collections, err := GetPostmanCollections(apiCtx)
+	if err != nil {
+		return nil, err
+	}
 	targets := make([]discovery_kit_api.Target, len(collections))
 	for i, collection := range collections {
 		targets[i] = discovery_kit_api.Target{

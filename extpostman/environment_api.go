@@ -1,9 +1,9 @@
 package extpostman
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -18,11 +18,11 @@ type PostmanEnvironment struct {
 }
 
 // DownloadEnvironment fetches the environment from the Postman API and writes it to destPath.
-func DownloadEnvironment(environmentId, destPath string) error {
-	return downloadPostmanResource("environments", environmentId, "environment", destPath)
+func DownloadEnvironment(ctx context.Context, environmentId, destPath string) error {
+	return downloadPostmanResource(ctx, "environments", environmentId, "environment", destPath)
 }
 
-func GetPostEnvironmentId(environmentIdOrName string) (string, error) {
+func GetPostEnvironmentId(ctx context.Context, environmentIdOrName string) (string, error) {
 	log.Info().Msgf("Searching for environment with id or name '%s'", environmentIdOrName)
 	environmentId, err := uuid.Parse(environmentIdOrName)
 	if err == nil {
@@ -30,8 +30,15 @@ func GetPostEnvironmentId(environmentIdOrName string) (string, error) {
 		return environmentId.String(), nil
 	}
 
-	environments := GetPostmanEnvironments()
+	// Resolving a name needs the full list. Failing to fetch it is reported as such: it used to
+	// be swallowed and surfaced as "failed to find environment", which sends anyone debugging a
+	// transient Postman API problem looking for a misconfigured environment name instead.
+	environments, err := GetPostmanEnvironments(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to list environments while resolving name '%s': %w", environmentIdOrName, err)
+	}
 	log.Info().Msgf("Found %d environments", len(environments))
+
 	var uniqueEnvironmentId string
 	counter := 0
 	for _, environment := range environments {
@@ -51,33 +58,15 @@ func GetPostEnvironmentId(environmentIdOrName string) (string, error) {
 	return "", fmt.Errorf("failed to find environment with name '%s'", environmentIdOrName)
 }
 
-func GetPostmanEnvironments() []PostmanEnvironment {
-	req, err := newPostmanApiRequest("environments")
+func GetPostmanEnvironments(ctx context.Context) ([]PostmanEnvironment, error) {
+	body, err := getPostmanApiResource(ctx, "environments")
 	if err != nil {
-		log.Error().Msgf("Failed to create request for postman api. Got error: %s", err)
-		return nil
+		return nil, err
 	}
-
-	response, err := postmanHttpClient.Do(req)
-	if err != nil {
-		log.Error().Msgf("Failed to get Environments from postman api. Got error: %s", err)
-		return nil
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Error().Msgf("Failed to close response body. Got error: %s", err)
-			return
-		}
-	}(response.Body)
 
 	var result PostmanEnvironmentResult
-	err = json.NewDecoder(response.Body).Decode(&result)
-	if err != nil {
-		log.Error().Msgf("Failed to decode response body. Got error: %s", err)
-		return nil
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode environments response: %w", err)
 	}
-
-	return result.Environments
+	return result.Environments, nil
 }

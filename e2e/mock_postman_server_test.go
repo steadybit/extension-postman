@@ -2,44 +2,79 @@ package e2e
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
+
+	"github.com/rs/zerolog/log"
 )
 
 const collectionId = "5f757f0d-de24-462c-867f-256bb696d2dd"
 
-func createMockPostmanServer() *httptest.Server {
+// mockPostmanServer stands in for the Postman API. Beyond serving the fixtures it can be told
+// to misbehave the way the real API occasionally does, so the extension's handling of a stalled
+// or failing API is covered end to end.
+type mockPostmanServer struct {
+	*httptest.Server
+	// stall holds every request open until the client gives up.
+	stall atomic.Bool
+	// failNextCollectionRequests makes that many collection downloads answer 500 before the
+	// fixture is served again. Scoped to the collection download so a discovery refresh cannot
+	// consume the failures.
+	failNextCollectionRequests atomic.Int32
+}
+
+func createMockPostmanServer() *mockPostmanServer {
 	listener, err := net.Listen("tcp", "0.0.0.0:0")
 	if err != nil {
 		panic(fmt.Sprintf("httptest: failed to listen: %v", err))
 	}
-	server := httptest.Server{
+
+	mock := &mockPostmanServer{}
+	mock.Server = &httptest.Server{
 		Listener: listener,
-		Config: &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			log.Info().Str("path", r.URL.Path).Str("method", r.Method).Str("query", r.URL.RawQuery).Msg("Request received")
-			if strings.Contains(r.URL.Path, "collections/"+collectionId) {
-				w.WriteHeader(http.StatusOK)
-				w.Write(getCollection())
-			} else if strings.Contains(r.URL.Path, "collections") {
-				w.WriteHeader(http.StatusOK)
-				w.Write(getCollections())
-			} else if strings.Contains(r.URL.Path, "environments/") {
-				w.WriteHeader(http.StatusOK)
-				w.Write(getEnvironment())
-			} else if strings.Contains(r.URL.Path, "environments") {
-				w.WriteHeader(http.StatusOK)
-				w.Write(getEnvironments())
-			} else {
-				w.WriteHeader(http.StatusBadRequest)
-			}
-		})},
+		Config:   &http.Server{Handler: http.HandlerFunc(mock.handle)},
 	}
-	server.Start()
-	log.Info().Str("url", server.URL).Msg("Started Mock-Server")
-	return &server
+	mock.Start()
+	log.Info().Str("url", mock.URL).Msg("Started Mock-Server")
+	return mock
+}
+
+func (s *mockPostmanServer) handle(w http.ResponseWriter, r *http.Request) {
+	log.Info().Str("path", r.URL.Path).Str("method", r.Method).Str("query", r.URL.RawQuery).Msg("Request received")
+
+	if s.stall.Load() {
+		log.Info().Msg("Stalling request")
+		<-r.Context().Done()
+		return
+	}
+
+	isCollectionDownload := strings.Contains(r.URL.Path, "collections/"+collectionId)
+	if isCollectionDownload && s.failNextCollectionRequests.Load() > 0 {
+		s.failNextCollectionRequests.Add(-1)
+		log.Info().Msg("Answering collection download with 500")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	switch {
+	case isCollectionDownload:
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(getCollection())
+	case strings.Contains(r.URL.Path, "collections"):
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(getCollections())
+	case strings.Contains(r.URL.Path, "environments/"):
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(getEnvironment())
+	case strings.Contains(r.URL.Path, "environments"):
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(getEnvironments())
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+	}
 }
 
 func getCollection() []byte {
