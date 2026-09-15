@@ -22,6 +22,7 @@ import (
 
 func main() {
 	config.ParseConfiguration()
+	config.ValidateConfiguration()
 
 	extlogging.InitZeroLog()
 	extbuild.PrintBuildInformation()

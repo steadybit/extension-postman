@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix: refuse to start when a required parameter is set but empty
+
 ## v2.0.36
 
 - build(deps): bump github.com/steadybit/action-kit/go/action_kit_test
