@@ -1,7 +1,9 @@
 # Changelog
 
-## Unreleased
+## v2.0.37
 
+- chore(deps): bump github.com/KimMachineGun/automemlimit from 0.7.5 to 1.0.0
+- fix: bound Postman API calls to the request budget the agent advertises (#154)
 - fix: refuse to start when a required parameter is set but empty
 
 ## v2.0.36
