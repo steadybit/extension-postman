@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.39
+
+- chore(deps): bump bundled npm to 12.1.0 (#156)
+
 ## v2.0.38
 
 - Add OpenTelemetry tracing support
