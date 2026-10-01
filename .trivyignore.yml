@@ -44,20 +44,21 @@ vulnerabilities:
   - id: CVE-2026-4800
     statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
     expired_at: 2027-02-01
-  - id: CVE-2026-14257
-    statement: Waiting for an updated newman version > `6.2.2` - https://github.com/postmanlabs/newman/tags
-    expired_at: 2027-02-01
-  - id: CVE-2026-69152
-    statement: Waiting for an updated npm version
-    expired_at: 2027-01-01
-  - id: CVE-2026-69192
-    statement: Waiting for an updated npm version
-    expired_at: 2027-01-01
   - id: CVE-2026-73231
     statement: faker bundled transitively via newman; waiting for upstream fix
     expired_at: 2027-02-01
-  - id: CVE-2026-73566
+  - id: CVE-2026-102276
     paths:
-      - usr/local/lib/node_modules/npm/node_modules/tar/package.json
-    statement: waiting on npm upstream fix
-    expired_at: 2027-02-01
+      - usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json
+    statement: Waiting for an updated npm version
+    expired_at: 2027-04-01
+  - id: CVE-2026-102278
+    paths:
+      - usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json
+    statement: Waiting for an updated npm version
+    expired_at: 2027-04-01
+  - id: CVE-2026-19534
+    paths:
+      - usr/local/lib/node_modules/npm/node_modules/undici/package.json
+    statement: Waiting for an updated npm version
+    expired_at: 2027-04-01
