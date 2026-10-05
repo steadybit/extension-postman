@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.40
+
+- build(deps): bump github.com/steadybit/action-kit/go/action_kit_test
+
 ## v2.0.39
 
 - chore(deps): bump bundled npm to 12.1.0 (#156)
