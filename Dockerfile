@@ -48,8 +48,26 @@ RUN echo "$VERSION" > /version.txt && echo "$REVISION" > /revision.txt
 
 ENV LC_ALL="en_US.UTF-8" LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" ALPINE_NODE_REPO="oznu/alpine-node"
 
+# newman is installed as a local project (instead of -g) so that "overrides" can force patched transitive dependencies
+COPY <<EOF /opt/newman/package.json
+{
+  "private": true,
+  "dependencies": {
+    "newman": "6.2.2",
+    "newman-reporter-json-summary": "1.0.14",
+    "newman-reporter-htmlextra": "1.23.1"
+  },
+  "overrides": {
+    "handlebars": "4.7.10"
+  }
+}
+EOF
+
 RUN npm install -g --ignore-scripts npm@12.1.0 && \
-    npm install -g --ignore-scripts newman@6.2.2 newman-reporter-json-summary@1.0.14 newman-reporter-htmlextra@1.23.1
+    npm install --prefix /opt/newman --ignore-scripts --omit=dev --no-audit --no-fund && \
+    npm cache clean --force
+
+ENV PATH="/opt/newman/node_modules/.bin:${PATH}"
 
 ARG USERNAME=steadybit
 ARG USER_UID=10000
