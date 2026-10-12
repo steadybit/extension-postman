@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.0.41
+
+- chore(deps): bump golang.org/x/net to v0.61.0
+- chore(deps): force handlebars 4.7.10 in the bundled newman via npm overrides
+- chore: ignore unfixed node-forge, braces and http-cache-semantics CVEs
+
 ## v2.0.40
 
 - build(deps): bump github.com/steadybit/action-kit/go/action_kit_test
