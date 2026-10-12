@@ -62,3 +62,14 @@ vulnerabilities:
       - usr/local/lib/node_modules/npm/node_modules/undici/package.json
     statement: Waiting for an updated npm version
     expired_at: 2027-04-01
+  - id: CVE-2026-85393
+    statement: node-forge bundled transitively via newman; no fixed version available yet
+    expired_at: 2027-04-01
+  - id: CVE-2026-93687
+    statement: braces bundled transitively via newman-reporter-htmlextra; no fixed version available yet
+    expired_at: 2027-04-01
+  - id: CVE-2026-93748
+    paths:
+      - usr/local/lib/node_modules/npm/node_modules/http-cache-semantics/package.json
+    statement: Waiting for an updated npm version
+    expired_at: 2027-04-01
