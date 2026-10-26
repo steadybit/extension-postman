@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.42
+
+- fix: remove npm from the runtime image (#158)
+
 ## v2.0.41
 
 - chore(deps): bump golang.org/x/net to v0.61.0
