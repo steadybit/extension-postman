@@ -63,9 +63,11 @@ COPY <<EOF /opt/newman/package.json
 }
 EOF
 
+# npm is only needed to install newman; removing it keeps its bundled dependencies (e.g. undici) out of the runtime image
 RUN npm install -g --ignore-scripts npm@12.1.0 && \
     npm install --prefix /opt/newman --ignore-scripts --omit=dev --no-audit --no-fund && \
-    npm cache clean --force
+    npm cache clean --force && \
+    rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 ENV PATH="/opt/newman/node_modules/.bin:${PATH}"
 
