@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.0.43
+
+- build(deps): bump github.com/KimMachineGun/automemlimit
+- build(deps): bump github.com/steadybit/action-kit/go/action_kit_test
+- build(deps): bump github.com/steadybit/extension-kit
+
 ## v2.0.42
 
 - fix: remove npm from the runtime image (#158)
