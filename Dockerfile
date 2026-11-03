@@ -58,7 +58,8 @@ COPY <<EOF /opt/newman/package.json
     "newman-reporter-htmlextra": "1.23.1"
   },
   "overrides": {
-    "handlebars": "4.7.10"
+    "handlebars": "4.7.10",
+    "node-forge": "1.4.1"
   }
 }
 EOF
