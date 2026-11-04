@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.44
+
+- chore(deps): override node-forge to 1.4.1, drop stale trivyignore entries
+
 ## v2.0.43
 
 - build(deps): bump github.com/KimMachineGun/automemlimit
