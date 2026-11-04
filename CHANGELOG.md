@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat: Run Collection shows Iterations right below the estimated duration, and its environment and run settings in the groups "Postman Environment" and "Run Settings" on platforms that support parameter groups
+
 ## v2.0.44
 
 - chore(deps): override node-forge to 1.4.1, drop stale trivyignore entries
