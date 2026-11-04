@@ -84,7 +84,8 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 				},
 			}),
 		}),
-		TimeControl: action_kit_api.TimeControlInternal,
+		TimeControl:     action_kit_api.TimeControlInternal,
+		ParameterGroups: new([]action_kit_api.ParameterGroup{environmentGroup, runSettingsGroup}),
 		Parameters: []action_kit_api.ActionParameter{
 			{
 				Name:         "duration",
@@ -95,11 +96,20 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 				Type:         action_kit_api.ActionParameterTypeDuration,
 			},
 			{
+				Name:         "iterations",
+				Label:        "Iterations",
+				Description:  new("Number of iterations to run the collection"),
+				Required:     new(false),
+				Type:         action_kit_api.ActionParameterTypeInteger,
+				DefaultValue: new("1"),
+			},
+			{
 				Name:        "environmentIdOrName",
 				Label:       "Environment ID or Name",
 				Description: new("UID or unique Name of the Postman Environment"),
 				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeString,
+				Group:       new(groupEnvironment),
 			},
 			{
 				Name:        "environment",
@@ -108,15 +118,7 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeKeyValue,
 				Advanced:    new(true),
-			},
-			{
-				Name:         "iterations",
-				Label:        "Iterations",
-				Description:  new("Number of iterations to run the collection"),
-				Required:     new(false),
-				Type:         action_kit_api.ActionParameterTypeInteger,
-				DefaultValue: new("1"),
-				Advanced:     new(true),
+				Group:       new(groupEnvironment),
 			},
 			{
 				Name:        "timeout",
@@ -125,6 +127,7 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeDuration,
 				Advanced:    new(true),
+				Group:       new(groupRunSettings),
 			},
 			{
 				Name:        "timeoutRequest",
@@ -133,6 +136,7 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeDuration,
 				Advanced:    new(true),
+				Group:       new(groupRunSettings),
 			},
 			{
 				Name:        "verbose",
@@ -141,6 +145,7 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeBoolean,
 				Advanced:    new(true),
+				Group:       new(groupRunSettings),
 			},
 			{
 				Name:        "bail",
@@ -149,6 +154,7 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeBoolean,
 				Advanced:    new(true),
+				Group:       new(groupRunSettings),
 			},
 		},
 		Prepare: action_kit_api.MutatingEndpointReference{},
