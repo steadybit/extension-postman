@@ -95,6 +95,14 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 				Type:         action_kit_api.ActionParameterTypeDuration,
 			},
 			{
+				Name:         "iterations",
+				Label:        "Iterations",
+				Description:  new("Number of iterations to run the collection"),
+				Required:     new(false),
+				Type:         action_kit_api.ActionParameterTypeInteger,
+				DefaultValue: new("1"),
+			},
+			{
 				Name:        "environmentIdOrName",
 				Label:       "Environment ID or Name",
 				Description: new("UID or unique Name of the Postman Environment"),
@@ -108,15 +116,6 @@ func (f PostmanAction) Describe() action_kit_api.ActionDescription {
 				Required:    new(false),
 				Type:        action_kit_api.ActionParameterTypeKeyValue,
 				Advanced:    new(true),
-			},
-			{
-				Name:         "iterations",
-				Label:        "Iterations",
-				Description:  new("Number of iterations to run the collection"),
-				Required:     new(false),
-				Type:         action_kit_api.ActionParameterTypeInteger,
-				DefaultValue: new("1"),
-				Advanced:     new(true),
 			},
 			{
 				Name:        "timeout",
