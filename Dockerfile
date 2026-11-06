@@ -48,7 +48,9 @@ RUN echo "$VERSION" > /version.txt && echo "$REVISION" > /revision.txt
 
 ENV LC_ALL="en_US.UTF-8" LANG="en_US.UTF-8" LANGUAGE="en_US.UTF-8" ALPINE_NODE_REPO="oznu/alpine-node"
 
-# newman is installed as a local project (instead of -g) so that "overrides" can force patched transitive dependencies
+# newman is installed as a local project (instead of -g) so that "overrides" can force patched transitive dependencies.
+# postman-request: postman-runtime 7.39.1 still pins 2.88.1-postman.34, whose har-validator > ajv 6 > uri-js has no fixed
+# release (CVE-2026-93690); newman itself already depends on 2.88.1-postman.48.
 COPY <<EOF /opt/newman/package.json
 {
   "private": true,
@@ -59,7 +61,9 @@ COPY <<EOF /opt/newman/package.json
   },
   "overrides": {
     "handlebars": "4.7.10",
-    "node-forge": "1.4.1"
+    "node-forge": "1.4.1",
+    "postman-request": "2.88.1-postman.48",
+    "qs": "6.17.1"
   }
 }
 EOF
