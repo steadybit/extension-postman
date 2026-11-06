@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix: a failing Postman API no longer removes all collections until the next discovery (up to 3h); the last discovered collections are kept and the discovery is retried with backoff
 - feat: Run Collection shows Iterations right below the estimated duration, and its environment and run settings in the groups "Postman Environment" and "Run Settings" on platforms that support parameter groups
 
 ## v2.0.44

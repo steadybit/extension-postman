@@ -15,6 +15,9 @@ import (
 	"time"
 )
 
+// collectionsMaxStaleness is how long the last collections are kept while the Postman API fails.
+const collectionsMaxStaleness = 24 * time.Hour
+
 type collectionDiscovery struct {
 }
 
@@ -30,9 +33,12 @@ func NewPostmanCollectionDiscovery() discovery_kit_sdk.TargetDiscovery {
 		log.Error().Msgf("Failed to parse Postman collection discovery interval: %s", err)
 		return nil
 	}
+	ctx := context.Background()
 	return discovery_kit_sdk.NewCachedTargetDiscovery(discovery,
 		discovery_kit_sdk.WithRefreshTargetsNow(),
-		discovery_kit_sdk.WithRefreshTargetsInterval(context.Background(), interval),
+		discovery_kit_sdk.WithRefreshTargetsInterval(ctx, interval),
+		discovery_kit_sdk.WithKeepTargetsOnError(collectionsMaxStaleness),
+		discovery_kit_sdk.WithRetryTargetsOnError(ctx, config.Config.PostmanCollectionDiscoveryRetryInterval, interval),
 	)
 }
 
