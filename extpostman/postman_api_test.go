@@ -276,6 +276,7 @@ func TestRetryAfter(t *testing.T) {
 		"X-RateLimit-RetryAfter":  {http.Header{"X-Ratelimit-Retryafter": {"8"}}, 8 * time.Second},
 		"RateLimit reset":         {http.Header{"Ratelimit": {"limit=300, remaining=0, reset=12"}}, 12 * time.Second},
 		"RateLimit not exhausted": {http.Header{"Ratelimit": {"limit=300, remaining=5, reset=12"}}, 0},
+		"RateLimit after monthly": {http.Header{"Ratelimit": {`"monthly";r=9448`, "limit=10, remaining=0, reset=3"}}, 3 * time.Second},
 		"none":                    {http.Header{}, 0},
 	} {
 		t.Run(name, func(t *testing.T) {

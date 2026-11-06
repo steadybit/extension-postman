@@ -235,12 +235,15 @@ func retryAfter(header http.Header) time.Duration {
 	return time.Duration(max(seconds, 0)) * time.Second
 }
 
-// rateLimitParam returns the named parameter of the RateLimit header, -1 if absent.
+// rateLimitParam returns the named parameter of the RateLimit header, -1 if absent. Postman sends
+// the header twice, e.g. "limit=10, remaining=9, reset=1" and "\"monthly\";r=9448".
 func rateLimitParam(header http.Header, name string) int {
-	for part := range strings.SplitSeq(header.Get("RateLimit"), ",") {
-		if value, ok := strings.CutPrefix(strings.TrimSpace(part), name+"="); ok {
-			if n, err := strconv.Atoi(value); err == nil {
-				return n
+	for _, value := range header.Values("RateLimit") {
+		for part := range strings.SplitSeq(value, ",") {
+			if param, ok := strings.CutPrefix(strings.TrimSpace(part), name+"="); ok {
+				if n, err := strconv.Atoi(param); err == nil {
+					return n
+				}
 			}
 		}
 	}
