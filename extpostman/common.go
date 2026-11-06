@@ -6,12 +6,15 @@ package extpostman
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -38,8 +41,22 @@ const (
 	// cannot run right up to the deadline.
 	postmanApiDeadlineMargin = 500 * time.Millisecond
 	// postmanApiRetryBackoff is multiplied by the number of attempts already made.
-	postmanApiRetryBackoff = 500 * time.Millisecond
+	postmanApiRetryBackoff    = 500 * time.Millisecond
+	postmanApiErrorBodyLimit  = 2048
+	postmanApiLowMonthlyQuota = 0.1
+	postmanApiQuotaWarnEvery  = time.Hour
 )
+
+var lastQuotaWarning atomic.Int64
+
+// retryableError marks a failure worth retrying; wait is the delay Postman asked for, if any.
+type retryableError struct {
+	err  error
+	wait time.Duration
+}
+
+func (e *retryableError) Error() string { return e.err.Error() }
+func (e *retryableError) Unwrap() error { return e.err }
 
 // postmanHttpClient is the shared client for all Postman API calls. It deliberately carries no
 // Timeout of its own: every request is issued with a context whose deadline is derived from the
@@ -86,9 +103,10 @@ func newPostmanApiRequest(ctx context.Context, pathSegments ...string) (*http.Re
 }
 
 // getPostmanApiResource GETs a resource from the Postman API and returns the raw response body.
-// Transient failures (network errors, 429 and 5xx) are retried with a linear backoff. Every
-// attempt is bounded by the smaller of config.PostmanApiTimeout and the time left on ctx, and no
-// further attempt is started once the budget can no longer accommodate one.
+// Transient failures (network errors, 429 and 5xx) are retried with a linear backoff, or after the
+// delay Postman asks for. Every attempt is bounded by the smaller of
+// config.PostmanApiTimeout and the time left on ctx, and no further attempt is started once the
+// budget can no longer accommodate one.
 func getPostmanApiResource(ctx context.Context, pathSegments ...string) ([]byte, error) {
 	resource := strings.Join(pathSegments, "/")
 	attempts := config.Config.PostmanApiMaxAttempts
@@ -97,9 +115,10 @@ func getPostmanApiResource(ctx context.Context, pathSegments ...string) ([]byte,
 	}
 
 	var lastErr error
+	var wait time.Duration
 	for attempt := 1; attempt <= attempts; attempt++ {
 		if attempt > 1 {
-			if !sleepWithContext(ctx, time.Duration(attempt-1)*postmanApiRetryBackoff) {
+			if !sleepWithContext(ctx, max(wait, time.Duration(attempt-1)*postmanApiRetryBackoff)) {
 				return nil, fmt.Errorf("postman api request for %s aborted while backing off: %w", resource, context.Cause(ctx))
 			}
 		}
@@ -112,37 +131,41 @@ func getPostmanApiResource(ctx context.Context, pathSegments ...string) ([]byte,
 			return nil, fmt.Errorf("no time left in the request budget to call the postman api for %s", resource)
 		}
 
-		body, retryable, err := getPostmanApiResourceOnce(ctx, timeout, resource, pathSegments)
+		body, err := getPostmanApiResourceOnce(ctx, timeout, resource, pathSegments)
 		if err == nil {
 			return body, nil
 		}
 		lastErr = err
-		if !retryable {
+		var retryable *retryableError
+		if !errors.As(err, &retryable) {
 			return nil, err
+		}
+		wait = retryable.wait
+		if attempt < attempts && wait > 0 && !fitsBudget(ctx, wait) {
+			return nil, fmt.Errorf("rate limited by the postman api for %s, retrying is possible in %s, after the request budget: %w", resource, wait, err)
 		}
 		log.Warn().Err(err).Msgf("Transient failure calling the postman api for %s (attempt %d/%d)", resource, attempt, attempts)
 	}
 	return nil, fmt.Errorf("postman api call for %s failed after %d attempt(s): %w", resource, attempts, lastErr)
 }
 
-// getPostmanApiResourceOnce performs a single attempt. The bool reports whether the failure is
-// worth retrying.
-func getPostmanApiResourceOnce(ctx context.Context, timeout time.Duration, resource string, pathSegments []string) ([]byte, bool, error) {
+// getPostmanApiResourceOnce performs one attempt; retryable failures are *retryableError.
+func getPostmanApiResourceOnce(ctx context.Context, timeout time.Duration, resource string, pathSegments []string) ([]byte, error) {
 	attemptCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	req, err := newPostmanApiRequest(attemptCtx, pathSegments...)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	response, err := postmanHttpClient.Do(req)
 	if err != nil {
 		// The shared budget being gone is final; a single attempt timing out is worth retrying.
 		if ctx.Err() != nil {
-			return nil, false, fmt.Errorf("postman api request for %s aborted: %w", resource, context.Cause(ctx))
+			return nil, fmt.Errorf("postman api request for %s aborted: %w", resource, context.Cause(ctx))
 		}
-		return nil, true, fmt.Errorf("failed to request %s from postman api: %w", resource, err)
+		return nil, &retryableError{err: fmt.Errorf("failed to request %s from postman api: %w", resource, err)}
 	}
 	defer func() {
 		if cerr := response.Body.Close(); cerr != nil {
@@ -150,42 +173,137 @@ func getPostmanApiResourceOnce(ctx context.Context, timeout time.Duration, resou
 		}
 	}()
 
-	if isRetryableStatus(response.StatusCode) {
-		return nil, true, fmt.Errorf("postman api returned status %s for %s", response.Status, resource)
-	}
 	if response.StatusCode != http.StatusOK {
-		return nil, false, fmt.Errorf("postman api returned status %s for %s", response.Status, resource)
+		return nil, postmanApiStatusError(response, resource)
 	}
+	warnOnLowMonthlyQuota(response.Header)
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		if ctx.Err() != nil {
-			return nil, false, fmt.Errorf("reading the postman api response for %s was aborted: %w", resource, context.Cause(ctx))
+			return nil, fmt.Errorf("reading the postman api response for %s was aborted: %w", resource, context.Cause(ctx))
 		}
-		return nil, true, fmt.Errorf("failed to read %s response body: %w", resource, err)
+		return nil, &retryableError{err: fmt.Errorf("failed to read %s response body: %w", resource, err)}
 	}
-	return body, false, nil
+	return body, nil
 }
 
-// isRetryableStatus reports whether a status code indicates a condition that may pass on its
-// own: rate limiting and server-side errors.
-func isRetryableStatus(statusCode int) bool {
-	return statusCode == http.StatusTooManyRequests || statusCode >= http.StatusInternalServerError
+func postmanApiStatusError(response *http.Response, resource string) error {
+	err := fmt.Errorf("postman api returned status %s for %s", response.Status, resource)
+	body, _ := io.ReadAll(io.LimitReader(response.Body, postmanApiErrorBodyLimit))
+	if detail := postmanErrorDetail(body); detail != "" {
+		err = fmt.Errorf("%w: %s", err, detail)
+	}
+
+	_, remainingMonth := monthlyQuota(response.Header)
+	// Postman documents no status code for an exhausted monthly limit, only this body.
+	exhausted := strings.Contains(strings.ToLower(string(body)), "service limit exhausted") ||
+		(response.StatusCode == http.StatusTooManyRequests && remainingMonth == 0)
+	switch {
+	case exhausted:
+		return fmt.Errorf("the monthly postman api call limit for this api key is exhausted: %w", err)
+	case response.StatusCode == http.StatusTooManyRequests:
+		return &retryableError{err: err, wait: retryAfter(response.Header)}
+	case response.StatusCode >= http.StatusInternalServerError:
+		return &retryableError{err: err}
+	default:
+		return err
+	}
+}
+
+// postmanErrorDetail returns "name: message" of Postman's {"error": {...}} body, else the raw body.
+func postmanErrorDetail(body []byte) string {
+	var parsed struct {
+		Error struct {
+			Name    string `json:"name"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if json.Unmarshal(body, &parsed) == nil && (parsed.Error.Name != "" || parsed.Error.Message != "") {
+		return strings.TrimPrefix(parsed.Error.Name+": "+parsed.Error.Message, ": ")
+	}
+	return strings.Join(strings.Fields(string(body)), " ")
+}
+
+// retryAfter returns the delay Postman asks for: RetryAfter, or the reset of an exhausted
+// RateLimit header ("limit=300, remaining=0, reset=12"); zero if none.
+func retryAfter(header http.Header) time.Duration {
+	seconds := headerInt(header, "RetryAfter", "X-RateLimit-RetryAfter", "Retry-After")
+	if seconds <= 0 && rateLimitParam(header, "remaining") == 0 {
+		seconds = rateLimitParam(header, "reset")
+	}
+	return time.Duration(max(seconds, 0)) * time.Second
+}
+
+// rateLimitParam returns the named parameter of the RateLimit header, -1 if absent.
+func rateLimitParam(header http.Header, name string) int {
+	for part := range strings.SplitSeq(header.Get("RateLimit"), ",") {
+		if value, ok := strings.CutPrefix(strings.TrimSpace(part), name+"="); ok {
+			if n, err := strconv.Atoi(value); err == nil {
+				return n
+			}
+		}
+	}
+	return -1
+}
+
+// monthlyQuota returns Postman's monthly call limit and remaining calls, -1 if absent.
+func monthlyQuota(header http.Header) (limit, remaining int) {
+	return headerInt(header, "RateLimit-Limit-Month", "X-RateLimit-Limit-Month"),
+		headerInt(header, "RateLimit-Remaining-Month", "X-RateLimit-Remaining-Month")
+}
+
+func warnOnLowMonthlyQuota(header http.Header) {
+	limit, remaining := monthlyQuota(header)
+	if limit <= 0 || remaining < 0 || float64(remaining) >= float64(limit)*postmanApiLowMonthlyQuota {
+		return
+	}
+	now := time.Now().UnixNano()
+	if last := lastQuotaWarning.Load(); now-last >= int64(postmanApiQuotaWarnEvery) && lastQuotaWarning.CompareAndSwap(last, now) {
+		log.Warn().Int("remaining", remaining).Int("limit", limit).Msg("The monthly postman api call limit for this api key is almost exhausted")
+	}
+}
+
+// headerInt returns the first integer among the named headers, -1 if there is none.
+func headerInt(header http.Header, names ...string) int {
+	for _, name := range names {
+		if value, err := strconv.Atoi(strings.TrimSpace(header.Get(name))); err == nil {
+			return value
+		}
+	}
+	return -1
+}
+
+// fitsBudget reports whether ctx leaves time to wait d and then make a full attempt.
+func fitsBudget(ctx context.Context, d time.Duration) bool {
+	remaining, ok := remainingBudget(ctx)
+	return !ok || remaining >= d+postmanApiAttemptTimeout()
+}
+
+// remainingBudget returns the usable time left on ctx, false if ctx has no deadline.
+func remainingBudget(ctx context.Context) (time.Duration, bool) {
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		return 0, false
+	}
+	return time.Until(deadline) - postmanApiDeadlineMargin, true
+}
+
+func postmanApiAttemptTimeout() time.Duration {
+	if config.Config.PostmanApiTimeout <= 0 {
+		return postmanApiFallbackBudget
+	}
+	return config.Config.PostmanApiTimeout
 }
 
 // attemptTimeout returns how long a single attempt may take, or a non-positive duration when the
 // budget is spent.
 func attemptTimeout(ctx context.Context) time.Duration {
-	timeout := config.Config.PostmanApiTimeout
-	if timeout <= 0 {
-		timeout = postmanApiFallbackBudget
-	}
-
-	deadline, ok := ctx.Deadline()
+	timeout := postmanApiAttemptTimeout()
+	usable, ok := remainingBudget(ctx)
 	if !ok {
 		return timeout
 	}
-	usable := time.Until(deadline) - postmanApiDeadlineMargin
 	if usable <= 0 {
 		return 0
 	}
