@@ -23,7 +23,7 @@ Postman_Api_Key
 | `STEADYBIT_EXTENSION_POSTMAN_API_KEY` | postman.apiKey         | Configure the api-key to be used for Postman communication. | yes      |         |
 | `STEADYBIT_EXTENSION_POSTMAN_API_TIMEOUT` | via extraEnv variables | Timeout for a single attempt against the Postman API. Keep it well below the request budget the agent advertises via the `Request-Timeout` header (28s with agent defaults). | no | `8s` |
 | `STEADYBIT_EXTENSION_POSTMAN_API_MAX_ATTEMPTS` | via extraEnv variables | Attempts per Postman API call (first try plus retries) before giving up. Network errors, `429` and `5xx` are retried; attempts stop early once the budget is spent. | no | `3` |
-| `STEADYBIT_EXTENSION_POSTMAN_COLLECTION_DISCOVERY_INTERVAL` | via extraEnv variables | How often the collections are fetched from the Postman API. Each fetch is one Postman API call. | no | `3h` |
+| `STEADYBIT_EXTENSION_POSTMAN_COLLECTION_DISCOVERY_INTERVAL` | via extraEnv variables | How often collections are fetched from the Postman API, one call each (`30m` ≈ 1,440 calls per month). | no | `30m` |
 | `STEADYBIT_EXTENSION_POSTMAN_COLLECTION_DISCOVERY_RETRY_INTERVAL` | via extraEnv variables | First delay before a failed collection discovery is retried; it doubles up to the discovery interval. Meanwhile the last discovered collections (at most 24h old) stay available. | no | `5m` |
 
 Beyond the settings above, this extension supports the configuration common to all Steadybit

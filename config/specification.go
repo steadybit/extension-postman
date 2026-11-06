@@ -8,7 +8,7 @@ import "time"
 type Specification struct {
 	PostmanBaseUrl                     string `json:"postmanBaseUrl" split_words:"true" required:"false" default:"https://api.getpostman.com"`
 	PostmanApiKey                      string `json:"postmanApiKey" split_words:"true" required:"true"`
-	PostmanCollectionDiscoveryInterval string `json:"postmanCollectionDiscoveryInterval" split_words:"true" required:"false" default:"3h"`
+	PostmanCollectionDiscoveryInterval string `json:"postmanCollectionDiscoveryInterval" split_words:"true" required:"false" default:"30m"`
 	// PostmanCollectionDiscoveryRetryInterval is the first delay before a failed collection discovery is retried.
 	PostmanCollectionDiscoveryRetryInterval time.Duration `json:"postmanCollectionDiscoveryRetryInterval" split_words:"true" required:"false" default:"5m"`
 	// PostmanApiTimeout bounds a single attempt against the Postman API. It has to stay well
