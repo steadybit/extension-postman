@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- fix: a failing Postman API no longer removes all collections until the next discovery; the last discovered collections are kept and the discovery is retried with backoff
+- feat: collections are discovered every 30m instead of every 3h (about 1,440 Postman API calls per month)
+- fix: rate-limited Postman API calls are retried after Postman's requested delay, or fail fast if that exceeds the request budget; an exhausted monthly call limit is reported instead of retried
+- fix: Postman API errors include Postman's message; a warning is logged when less than 10% of the monthly call limit is left
 - feat: Run Collection shows Iterations right below the estimated duration, and its environment and run settings in the groups "Postman Environment" and "Run Settings" on platforms that support parameter groups
 
 ## v2.0.44

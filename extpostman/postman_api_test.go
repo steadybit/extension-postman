@@ -193,3 +193,114 @@ func TestStatusReportsSignalKilledNewmanAsCompleted(t *testing.T) {
 	assert.Equal(t, action_kit_api.Errored, *result.Error.Status)
 	assert.True(t, strings.HasPrefix(result.Error.Title, "Postman process is not running anymore"))
 }
+
+func TestPostmanApiRetriesRateLimitAfterRequestedDelay(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) == 1 {
+			w.Header().Set("RetryAfter", "1")
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		_, _ = w.Write([]byte(`{"collections":[]}`))
+	}))
+	t.Cleanup(server.Close)
+	configureApiStub(t, server.URL, "2s", "3")
+
+	start := time.Now()
+	_, err := GetPostmanCollections(context.Background())
+
+	require.NoError(t, err)
+	assert.Equal(t, int32(2), calls.Load())
+	assert.GreaterOrEqual(t, time.Since(start), time.Second, "the retry must wait for the requested delay")
+}
+
+func TestPostmanApiFailsFastWhenRateLimitDelayExceedsBudget(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.Header().Set("RateLimit", "limit=300, remaining=0, reset=45")
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	t.Cleanup(server.Close)
+	configureApiStub(t, server.URL, "2s", "3")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	start := time.Now()
+	_, err := GetPostmanCollections(ctx)
+
+	require.ErrorContains(t, err, "retrying is possible in 45s")
+	assert.Equal(t, int32(1), calls.Load())
+	assert.Less(t, time.Since(start), time.Second)
+}
+
+func TestPostmanApiDoesNotRetryExhaustedMonthlyLimit(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.Header().Set("RateLimit-Limit-Month", "10000")
+		w.Header().Set("RateLimit-Remaining-Month", "0")
+		w.WriteHeader(http.StatusTooManyRequests)
+		_, _ = w.Write([]byte(`{"error":{"name":"serviceLimitExhausted","message":"Service limit exhausted. Please contact your team admin."}}`))
+	}))
+	t.Cleanup(server.Close)
+	configureApiStub(t, server.URL, "2s", "3")
+
+	_, err := GetPostmanCollections(context.Background())
+
+	require.ErrorContains(t, err, "monthly postman api call limit for this api key is exhausted")
+	assert.ErrorContains(t, err, "Service limit exhausted")
+	assert.Equal(t, int32(1), calls.Load())
+}
+
+func TestPostmanApiErrorIncludesPostmanMessage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"error":{"name":"serverError","message":"Something went wrong"}}`))
+	}))
+	t.Cleanup(server.Close)
+	configureApiStub(t, server.URL, "2s", "1")
+
+	_, err := GetPostmanCollections(context.Background())
+
+	require.ErrorContains(t, err, "500 Internal Server Error for collections: serverError: Something went wrong")
+}
+
+func TestRetryAfter(t *testing.T) {
+	for name, tc := range map[string]struct {
+		header http.Header
+		want   time.Duration
+	}{
+		"RetryAfter":              {http.Header{"Retryafter": {"7"}}, 7 * time.Second},
+		"X-RateLimit-RetryAfter":  {http.Header{"X-Ratelimit-Retryafter": {"8"}}, 8 * time.Second},
+		"RateLimit reset":         {http.Header{"Ratelimit": {"limit=300, remaining=0, reset=12"}}, 12 * time.Second},
+		"RateLimit not exhausted": {http.Header{"Ratelimit": {"limit=300, remaining=5, reset=12"}}, 0},
+		"RateLimit after monthly": {http.Header{"Ratelimit": {`"monthly";r=9448`, "limit=10, remaining=0, reset=3"}}, 3 * time.Second},
+		"none":                    {http.Header{}, 0},
+	} {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, retryAfter(tc.header))
+		})
+	}
+}
+
+func TestPostmanApiRetriesServerErrorsWithoutRateLimitDelay(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) == 1 {
+			w.Header().Set("RateLimit", "limit=300, remaining=0, reset=45")
+			w.Header().Set("RateLimit-Remaining-Month", "0")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write([]byte(`{"collections":[]}`))
+	}))
+	t.Cleanup(server.Close)
+	configureApiStub(t, server.URL, "2s", "3")
+
+	_, err := GetPostmanCollections(context.Background())
+
+	require.NoError(t, err, "rate-limit headers on a 5xx must neither delay nor stop the retry")
+	assert.Equal(t, int32(2), calls.Load())
+}
