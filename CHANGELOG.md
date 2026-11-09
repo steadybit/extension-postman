@@ -1,12 +1,21 @@
 # Changelog
 
-## Unreleased
+## v2.0.45
 
-- fix: a failing Postman API no longer removes all collections until the next discovery; the last discovered collections are kept and the discovery is retried with backoff
-- feat: collections are discovered every 30m instead of every 3h (about 1,440 Postman API calls per month)
-- fix: rate-limited Postman API calls are retried after Postman's requested delay, or fail fast if that exceeds the request budget; an exhausted monthly call limit is reported instead of retried
-- fix: Postman API errors include Postman's message; a warning is logged when less than 10% of the monthly call limit is left
+- build(deps): update discovery_kit_sdk to v1.5.0
+- chore(deps): bump golang.org/x/net to v0.62.0
+- chore(deps): override qs and postman-request in the newman install (#164)
 - feat: Run Collection shows Iterations right below the estimated duration, and its environment and run settings in the groups "Postman Environment" and "Run Settings" on platforms that support parameter groups
+- feat: collections are discovered every 30m instead of every 3h (about 1,440 Postman API calls per month)
+- feat: discover Postman collections every 30m instead of every 3h
+- feat: show Iterations of Postman runs below the estimated duration
+- feat: show the Postman environment and run settings in groups
+- fix: Postman API errors include Postman's message; a warning is logged when less than 10% of the monthly call limit is left
+- fix: a failing Postman API no longer removes all collections until the next discovery; the last discovered collections are kept and the discovery is retried with backoff
+- fix: handle Postman API rate limits and include Postman's error message
+- fix: keep Postman collections and retry discovery when the Postman API fails
+- fix: rate-limited Postman API calls are retried after Postman's requested delay, or fail fast if that exceeds the request budget; an exhausted monthly call limit is reported instead of retried
+- fix: read every RateLimit header value Postman sends
 
 ## v2.0.44
 
