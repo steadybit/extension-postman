@@ -61,7 +61,7 @@ COPY <<EOF /opt/newman/package.json
   },
   "overrides": {
     "handlebars": "4.7.10",
-    "node-forge": "1.4.1",
+    "node-forge": "1.4.3",
     "postman-request": "2.88.1-postman.48",
     "qs": "6.17.1"
   }
